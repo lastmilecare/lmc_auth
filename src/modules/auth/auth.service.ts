@@ -1,21 +1,329 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { UsersService } from '../UserControl/User.service';
-// Testing changes
+import { Injectable } from '@nestjs/common';
+import { Role } from 'src/models/Roles';
+import { UserN as User } from 'src/models/UsersN';
+import { Permission } from 'src/models/Permissions';
+import { Permissionmetadata } from 'src/models/PermissionsMetaData';
+
 @Injectable()
 export class AuthService {
-  constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
-  ) {}
+  async adminAuth(email: string, password: string) {
+    try {
+      const result = await User.findOne({
+        where: {
+          email: email,
+          isAdmin: true,
+        },
+        include: [
+          {
+            model: Permission,
+            as: 'permission',
+            include: [
+              {
+                model: Permissionmetadata,
+                as: 'Permissionmetadata',
+              },
+            ],
+          },
+        ],
+      });
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByUsername(username);
-    if (user && await bcrypt.compare(pass, user.password)) {
-      const { password, ...result } = user;
-      return { user: result, token: this.jwtService.sign({ userId: user.id, username: user.username }) };
+      if (result) {
+        if (result.status === false) {
+          return { status: 'account_inactive' };
+        }
+
+        const findRole = await Role.findOne({
+          where: { id: result.role_id },
+          attributes: ['slug', 'role_title'],
+        });
+
+        const mergedData = {
+          ...result.toJSON(),
+          ...findRole.toJSON(),
+        };
+
+        console.log('mergedData', mergedData);
+        return mergedData;
+      } else {
+        return { status: 'no_user_found' };
+      }
+    } catch (error) {
+      console.log(error);
+      throw new Error(error);
     }
-    throw new UnauthorizedException();
   }
+
+  async centerAuth(email: string, password: string) {
+    try {
+      const result = await User.findOne({
+        where: {
+          email: email,
+          isAdmin: false,
+        },
+        include: [
+          {
+            model: Permission,
+            as: 'permission',
+            include: [
+              {
+                model: Permissionmetadata,
+                as: 'Permissionmetadata',
+              },
+            ],
+          },
+        ],
+      });
+
+      if (result) {
+        if (result.status === false) {
+          return { status: 'account_inactive' };
+        }
+
+        const findRole = await Role.findOne({
+          where: { id: result.role_id },
+          attributes: ['slug', 'role_title'],
+        });
+
+        const mergedData = {
+          ...result.toJSON(),
+          ...findRole.toJSON(),
+        };
+
+        console.log('mergedData', mergedData);
+        return mergedData;
+      } else {
+        return { status: 'no_user_found' };
+      }
+    } catch (error) {
+      console.log(error);
+      throw new Error(error);
+    }
+  }
+
+  async cetAuth(email: string, password: string) {
+    try {
+      const result = await User.findOne({
+        where: {
+          email: email,
+          isAdmin: false,
+        },
+        include: [
+          {
+            model: Permission,
+            as: 'permission',
+            include: [
+              {
+                model: Permissionmetadata,
+                as: 'Permissionmetadata',
+              },
+            ],
+          },
+        ],
+      });
+
+      if (result) {
+        if (result.status === false) {
+          return { status: 'account_inactive' };
+        }
+
+        const findRole = await Role.findOne({
+          where: { id: result.role_id },
+          attributes: ['slug', 'role_title'],
+        });
+
+        const mergedData = {
+          ...result.toJSON(),
+          ...findRole.toJSON(),
+        };
+
+        console.log('mergedData', mergedData);
+        return mergedData;
+      } else {
+        return { status: 'no_user_found' };
+      }
+    } catch (error) {
+      console.log(error);
+      throw new Error(error);
+    }
+  }
+
+  async insertPermission(permissionData: any) {
+    try {
+      return await Permission.create(permissionData);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async insertPermissionMetadata(metadata: any) {
+    try {
+      return await Permissionmetadata.create(metadata);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async findPermission(req: any) {
+    try {
+      return await Permission.findAll({
+        include: [
+          {
+            model: Permissionmetadata,
+            as: 'Permissionmetadata',
+          },
+          {
+            model: Role,
+            as: 'Role',
+          },
+        ],
+        order: [['id', 'DESC']],
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async changeStatue(id: number, status: boolean) {
+    try {
+      return await User.update(
+        { status: status },
+        {
+          where: { id: id },
+        },
+      );
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async findPermissionData(id: number) {
+    try {
+      return await Permission.findOne({
+        where: { id },
+        include: {
+          model: Permissionmetadata,
+          as: 'Permissionmetadata',
+        },
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async updatePermission(permissionId: number, newData: any) {
+    try {
+      return await Permission.update(newData, {
+        where: { id: permissionId },
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async updatePermissionMetadata(metadataId: number, newData: any) {
+    try {
+      await Permissionmetadata.update(newData, {
+        where: { id: metadataId },
+      });
+      return await Permissionmetadata.findByPk(metadataId);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async permmissionDelete(permissionId: number) {
+    try {
+      await Permissionmetadata.destroy({
+        where: { permission_id: permissionId },
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async permmissiondUpdate(mergedObject: any) {
+    try {
+      return await Permissionmetadata.create(mergedObject);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async checkRole(permission_id) {
+    try {
+      return await Permission.findOne({
+        where: { id: permission_id },
+        raw: true,
+        nest: true
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+  async getRole(slug) {
+    try {
+
+      return await Role.findOne({
+        where: { slug: slug },
+
+        order: [['id', 'DESC']],
+        raw: true,
+        nest: true
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+  async getLastId(getRole) {
+    try {
+
+      return await User.findOne({
+        where: { role_id: getRole.id },
+        order: [['id', 'DESC']],
+        raw: true,
+        nest: true
+      });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async createUser(data) {
+    try {
+      return await User.create(data);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async  roleInsert(data) {
+    try {
+      return await Role.create(data);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+  
+  async  rolefindAll() {
+    try {
+      return await Role.findAll({ order: [['id', 'DESC']] });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+  async  getRoleData(id) {
+    try {
+      return await Role.findOne({ where: { id: id }, raw: true, nest: true });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+  async  updateRole(data, id) {
+    try {
+      return await Role.update(data, { where: { id: id } });
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
 }

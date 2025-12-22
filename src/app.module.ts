@@ -9,33 +9,36 @@ import { Role } from './models/Roles';
 import { Permission } from './models/Permissions';
 import { RolePermission } from './models/role-permission';
 import { UserRole } from './models/user-role';
-import { UsersModule } from './modules/UserControl/User.module';  
+import { UsersModule } from './modules/UserControl/User.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/Roles/Role.module';
+import { CETMANAGEMENT } from './models/CetManagement';
+import { Cetuser } from './models/CetUser';
+import { Permissionmetadata } from './models/PermissionsMetaData';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({  isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true }),
     SequelizeModule.forRoot({
-    dialect: 'postgres',
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT, 10),
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    models: [UserN, Role, Permission, RolePermission, UserRole],
-    autoLoadModels: true,
-    synchronize: false, // Use only in development; use migrations in prod
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false, // Use only in development
+      dialect: 'postgres',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT, 10),
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      models: [UserN, Role, Permission, RolePermission, UserRole, CETMANAGEMENT, Cetuser, Permissionmetadata],
+      autoLoadModels: true,
+      synchronize: false, // Use only in development; use migrations in prod
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false, // Use only in development
+        },
       },
-    },
-  }),
-  UsersModule,
-  AuthModule,
-  RolesModule,
+    }),
+    UsersModule,
+    AuthModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,25 +1,62 @@
-import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, HasMany } from 'sequelize-typescript';
-import { UserRole } from './user-role';
+import { Column, Model, Table, HasMany, BelongsTo, BelongsToMany, DataType } from 'sequelize-typescript';
+import { Role } from './Roles'; 
+import { Permission } from './Permissions';  
+import { Cetuser } from './CetUser';  
+import { CETMANAGEMENT } from './CetManagement'; 
+@Table({ tableName: 'Users' })
 
-@Table({ tableName: 'UsersN' })
 export class UserN extends Model {
-  @PrimaryKey
-  @AutoIncrement
   @Column
-  declare id: number;
-
-  @Column({ type: DataType.STRING, allowNull: false, unique: true })
   username: string;
 
-  @Column({ type: DataType.STRING, allowNull: false })
-  password: string;
+  @Column
+  name: string;
 
-  @Column({ type: DataType.STRING, allowNull: false, unique: true })
+  @Column
+  role_id: bigint;
+
+  @Column
+  permission_id: bigint;
+
+  @Column
   email: string;
 
-  @Column({ type: DataType.STRING, allowNull: true })
+  @Column
+  password: string;
+
+  @Column
   phone: string;
 
-  @HasMany(() => UserRole)
-  userRoles: UserRole[];
+  @Column
+  isAdmin: boolean;
+
+  @Column
+  status: boolean;
+
+  @Column
+  external_id: string;
+
+  @Column({
+    type: DataType.JSONB,
+    allowNull: true,
+    defaultValue: {},
+  })
+  attributes: Record<string, any>;
+
+  @BelongsTo(() => Role, { foreignKey: 'role_id', as: 'role' })
+  role: Role;
+
+  @BelongsTo(() => Permission, { foreignKey: 'permission_id', as: 'permission' })
+  permission: Permission;
+
+  @HasMany(() => Cetuser, { foreignKey: 'user_id', as: 'Cetusers' })
+  Cetusers: Cetuser[];
+
+  @BelongsToMany(() => CETMANAGEMENT, {
+    through: () => Cetuser,
+    foreignKey: 'user_id',
+    otherKey: 'cet_id',
+    as: 'CETManagements'
+  })
+  CETManagements: CETMANAGEMENT[];
 }

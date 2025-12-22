@@ -21,8 +21,8 @@ export class UsersService {
     return this.userModel.findByPk(id, { include: [UserRole] });
   }
 
-  async findByUsername(username: string): Promise<User> {
-    return this.userModel.findOne({ where: {  username}, raw: true });
+  async findByUsername(email: string): Promise<User> {
+    return this.userModel.findOne({ where: {  email}, raw: true });
   }
 
   async create(userData: { username: string; email: string; phone?: string; password: string; role?: number[] }) {

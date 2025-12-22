@@ -1,15 +1,20 @@
-import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, HasMany } from 'sequelize-typescript';
-import { RolePermission } from './role-permission';
-
-@Table
+import { Column, Model, Table, BelongsTo, HasMany } from 'sequelize-typescript';
+import { Role } from './Roles';
+import { Permissionmetadata } from './PermissionsMetaData';
+@Table({
+  tableName: 'Permissions',
+  timestamps: true,
+})
 export class Permission extends Model {
-  @PrimaryKey
-  @AutoIncrement
   @Column
-  declare id: number;
+  role_id: bigint;
 
-  @Column({ type: DataType.STRING, allowNull: false, unique: true })
+  @Column
   permission_name: string;
 
+  @BelongsTo(() => Role, { foreignKey: 'role_id', as: 'Role' })
+  role: Role;
 
+  @HasMany(() => Permissionmetadata, { foreignKey: 'permission_id', as: 'Permissionmetadata' })
+  permissionMetadata: Permissionmetadata[];
 }
