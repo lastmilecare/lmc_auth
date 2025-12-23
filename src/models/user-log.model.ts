@@ -1,8 +1,18 @@
-import { Column, Model, Table, HasMany, BelongsToMany, DataType,ForeignKey,BelongsTo } from 'sequelize-typescript';
+import {
+  Column,
+  Model,
+  Table,
+  DataType,
+  ForeignKey,
+  BelongsTo,
+  CreatedAt,
+  UpdatedAt,
+} from 'sequelize-typescript';
 import { UserN as User } from './UsersN';
+
 @Table({
-  tableName: 'userlogs', 
-  timestamps: false,     
+  tableName: 'userlogs',
+  timestamps: true,
 })
 export class UserLog extends Model<UserLog> {
   @ForeignKey(() => User)
@@ -26,7 +36,7 @@ export class UserLog extends Model<UserLog> {
 
   @Column({
     type: DataType.JSON,
-    allowNull: false,
+    allowNull: true,
   })
   action_description: Record<string, any>;
 
@@ -36,7 +46,13 @@ export class UserLog extends Model<UserLog> {
   })
   action_time: Date;
 
-  // ✅ Association
+  c
+  @CreatedAt
+  declare createdAt: Date;
+
+  @UpdatedAt
+  declare updatedAt: Date;
+
   @BelongsTo(() => User, { as: 'User' })
   User: User;
 }

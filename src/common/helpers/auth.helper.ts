@@ -22,7 +22,7 @@ type TokenResponse = {
     isAdmin?: any;
     permission?: any;
     user_id?: any;
-    status?: 'invalid_password';
+    status?: any;
 };
 
 export const checkUserPass = async (
@@ -52,6 +52,7 @@ export const checkUserPass = async (
         isAdmin: userdata.isAdmin,
         permission: userdata.permission || null,
         user_id: userdata.id || null,
+        status: true
     };
 };
 
@@ -62,8 +63,8 @@ export const checkUserPass = async (
 export const checkUserPassCenter = async (
     password: string,
     userdata: any,
-    res: Response,
-) => {
+    res: any,
+): Promise<TokenResponse> => {
     try {
         const passwordIsValid = await bcrypt.compare(
             password,
@@ -87,6 +88,7 @@ export const checkUserPassCenter = async (
             isAdmin: userdata.isAdmin,
             permission: userdata.permission || null,
             user_id: userdata.id,
+            status: true
         };
 
         res.setHeader(

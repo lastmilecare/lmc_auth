@@ -15,6 +15,11 @@ import { RolesModule } from './modules/Roles/Role.module';
 import { CETMANAGEMENT } from './models/CetManagement';
 import { Cetuser } from './models/CetUser';
 import { Permissionmetadata } from './models/PermissionsMetaData';
+import { UserLog } from './models/user-log.model';
+import { Center } from './models/center.model';
+import { Centeruser } from './models/centeruser.model';
+import { TestAccount } from './models/test-account.model';
+import { CenterAuthModule } from './modules/CenterAuth/centerauth.module';
 
 @Module({
   imports: [
@@ -26,7 +31,8 @@ import { Permissionmetadata } from './models/PermissionsMetaData';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      models: [UserN, Role, Permission, RolePermission, UserRole, CETMANAGEMENT, Cetuser, Permissionmetadata],
+      models: [UserN, Role, Permission, RolePermission, UserRole, CETMANAGEMENT, Cetuser,
+        Permissionmetadata, UserLog, Center, Centeruser, TestAccount],
       autoLoadModels: true,
       synchronize: false, // Use only in development; use migrations in prod
       dialectOptions: {
@@ -39,6 +45,7 @@ import { Permissionmetadata } from './models/PermissionsMetaData';
     UsersModule,
     AuthModule,
     RolesModule,
+    CenterAuthModule
   ],
   controllers: [AppController],
   providers: [AppService],

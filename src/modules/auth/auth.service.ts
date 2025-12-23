@@ -28,12 +28,12 @@ export class AuthService {
       });
 
       if (result) {
-        if (result.status === false) {
+        if ((result.status || result.dataValues.status) === false) {
           return { status: 'account_inactive' };
         }
-
+        let roleId = result.role_id || result.dataValues.role_id
         const findRole = await Role.findOne({
-          where: { id: result.role_id },
+          where: { id: roleId },
           attributes: ['slug', 'role_title'],
         });
 
@@ -41,14 +41,11 @@ export class AuthService {
           ...result.toJSON(),
           ...findRole.toJSON(),
         };
-
-        console.log('mergedData', mergedData);
         return mergedData;
       } else {
         return { status: 'no_user_found' };
       }
     } catch (error) {
-      console.log(error);
       throw new Error(error);
     }
   }
@@ -75,12 +72,12 @@ export class AuthService {
       });
 
       if (result) {
-        if (result.status === false) {
+        if ((result.status || result.dataValues.status) === false) {
           return { status: 'account_inactive' };
         }
-
+        let roleId = result.role_id || result.dataValues.role_id;
         const findRole = await Role.findOne({
-          where: { id: result.role_id },
+          where: { id: roleId },
           attributes: ['slug', 'role_title'],
         });
 
@@ -89,7 +86,6 @@ export class AuthService {
           ...findRole.toJSON(),
         };
 
-        console.log('mergedData', mergedData);
         return mergedData;
       } else {
         return { status: 'no_user_found' };
@@ -296,29 +292,29 @@ export class AuthService {
     }
   }
 
-  async  roleInsert(data) {
+  async roleInsert(data) {
     try {
       return await Role.create(data);
     } catch (error) {
       throw new Error(error);
     }
   }
-  
-  async  rolefindAll() {
+
+  async rolefindAll() {
     try {
       return await Role.findAll({ order: [['id', 'DESC']] });
     } catch (error) {
       throw new Error(error);
     }
   }
-  async  getRoleData(id) {
+  async getRoleData(id) {
     try {
       return await Role.findOne({ where: { id: id }, raw: true, nest: true });
     } catch (error) {
       throw new Error(error);
     }
   }
-  async  updateRole(data, id) {
+  async updateRole(data, id) {
     try {
       return await Role.update(data, { where: { id: id } });
     } catch (error) {

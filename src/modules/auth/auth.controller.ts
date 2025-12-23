@@ -165,7 +165,7 @@ export class AuthController {
       await createUserLogs({
         user_id: result.id,
         action_type: 'admin_login',
-        action_description: null,
+        action_description: "login",
         user_ip: (req as any).userIp,
         action_time: new Date().toISOString(),
       });
