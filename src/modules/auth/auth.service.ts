@@ -118,12 +118,12 @@ export class AuthService {
       });
 
       if (result) {
-        if (result.status === false) {
+        if ((result.status || result.dataValues.status) === false) {
           return { status: 'account_inactive' };
         }
-
+        let roleId = result.role_id || result.dataValues.role_id;
         const findRole = await Role.findOne({
-          where: { id: result.role_id },
+          where: { id: roleId },
           attributes: ['slug', 'role_title'],
         });
 
@@ -132,7 +132,6 @@ export class AuthService {
           ...findRole.toJSON(),
         };
 
-        console.log('mergedData', mergedData);
         return mergedData;
       } else {
         return { status: 'no_user_found' };

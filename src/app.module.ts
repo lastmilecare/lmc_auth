@@ -20,6 +20,7 @@ import { Center } from './models/center.model';
 import { Centeruser } from './models/centeruser.model';
 import { TestAccount } from './models/test-account.model';
 import { CenterAuthModule } from './modules/CenterAuth/centerauth.module';
+import { CetAuthModule } from './modules/CetAuth/cetauth.module';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import { CenterAuthModule } from './modules/CenterAuth/centerauth.module';
     UsersModule,
     AuthModule,
     RolesModule,
-    CenterAuthModule
+    CenterAuthModule,
+    CetAuthModule
   ],
   controllers: [AppController],
   providers: [AppService],

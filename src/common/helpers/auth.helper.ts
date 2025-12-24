@@ -1,8 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import * as cookie from 'cookie';
-import { Response } from 'express';
-
 import { UserN as User } from 'src/models/UsersN';
 import { UserLog as userlog } from 'src/models/user-log.model';
 import { Cetuser as Cetuser } from 'src/models/CetUser';
@@ -23,6 +21,8 @@ type TokenResponse = {
     permission?: any;
     user_id?: any;
     status?: any;
+    cet_id?: any;
+    isCet?: any;
 };
 
 export const checkUserPass = async (
@@ -147,8 +147,8 @@ export const checkPhoneExist = async (phone: string) => {
 export const checkUserPassCet = async (
     password: string,
     userdata: any,
-    res: Response,
-) => {
+    res: any,
+) : Promise<TokenResponse>=> {
     try {
         const passwordIsValid = await bcrypt.compare(
             password,
@@ -183,9 +183,10 @@ export const checkUserPassCet = async (
             role: userdata.slug,
             username: userdata.username,
             isAdmin: false,
-            isCet: true,
             permission: userdata.permission || null,
             cet_id: cetUser.cet_id,
+            isCet: true,
+            status: true
         };
 
         res.setHeader(

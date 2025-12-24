@@ -159,29 +159,5 @@ export class CenterAuthController {
     }
   }
 
-  // @Post('getCenterId')
-  // async getCenterId(@Req() req: any, @Res() res: any) {
-  //   try {
-  //     const userId = req.userId;
-  //     if (!userId) {
-  //       return sendError(res, 400, "User ID is required.", "User ID not found in request.");
-  //     }
-
-  //     const centerUser = await Centeruser.findOne({
-  //       where: { user_id: userId },
-  //       attributes: ['center_id'],
-  //     });
-
-  //     if (!centerUser) {
-  //       return sendError(res, 404, "Center not found for this user.", "Center user mapping not found.");
-  //     }
-
-  //     sendSuccess(res, 200, { center_id: centerUser.center_id }, "Center ID retrieved successfully.");
-  //   } catch (error) {
-  //     console.error("Error in getCenterId:", error);
-  //     sendError(res, 500, "Internal server error.", error.message);
-  //   }
-  // }
-
 }
 
