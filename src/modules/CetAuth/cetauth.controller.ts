@@ -41,9 +41,10 @@ export class CetAuthController {
                     sendError(res, 404, "no_user_found", 'No user found!');
                     return;
                 }
-                if (result.slug != "cet") {
-                    sendError(res, 401, "Invalid_role", 'Invalid Role');
-                    return;
+
+                const allowedRoles = ['cet', 'corporate'];
+                if (!allowedRoles.includes(result.slug)) {
+                    return sendError(res, 401, 'Invalid_role', 'Invalid Role');
                 }
     
                 const tokenData = await checkUserPassCet(req.body.password, result, res);
