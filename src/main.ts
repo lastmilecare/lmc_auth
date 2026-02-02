@@ -8,7 +8,7 @@ async function bootstrap() {
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: '*',
-    credentials: true,
+    credentials: false,
   });
 
   app.setGlobalPrefix('api/v1');

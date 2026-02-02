@@ -21,6 +21,7 @@ import { Centeruser } from './models/centeruser.model';
 import { TestAccount } from './models/test-account.model';
 import { CenterAuthModule } from './modules/CenterAuth/centerauth.module';
 import { CetAuthModule } from './modules/CetAuth/cetauth.module';
+import {PicasoidAuthModule} from './modules/PicasoidAuth/picasoid-auth.module';
 
 @Module({
   imports: [
@@ -47,7 +48,8 @@ import { CetAuthModule } from './modules/CetAuth/cetauth.module';
     AuthModule,
     RolesModule,
     CenterAuthModule,
-    CetAuthModule
+    CetAuthModule,
+    PicasoidAuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
