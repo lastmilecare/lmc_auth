@@ -125,12 +125,19 @@ export class AuthService {
         const findRole = await Role.findOne({
           where: { id: roleId },
           attributes: ['slug', 'role_title'],
+          include:[
+            {
+              model: Permission,
+              as: 'permissions',
+            }
+          ]
         });
 
         const mergedData = {
           ...result.toJSON(),
           ...findRole.toJSON(),
         };
+        // console.log(mergedData);
 
         return mergedData;
       } else {

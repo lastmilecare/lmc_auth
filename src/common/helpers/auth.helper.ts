@@ -9,6 +9,7 @@ import {
     JWT_ADMIN as configJwttoken,
     JWT_CENTER as configJwttokenCenter,
 } from 'config/envConfig';
+import { CorporateUser } from 'src/models/corporate-user';
 
 /**
  * ADMIN LOGIN
@@ -163,32 +164,39 @@ export const checkUserPassCet = async (
             where: { user_id: userdata.id },
         });
 
-        if (!cetUser) {
+        const corUser = await CorporateUser.findOne({ where: { user_id: userdata.id } });
+        if (!cetUser && !corUser) {
             return { status: 'no_cet_id_found' };
         }
-
+        console.log(corUser)
+        const cet_id = cetUser?.cet_id || corUser?.dataValues?.corporate_id;
+        console.log("cet_id", cet_id);
         const token = jwt.sign(
             {
                 data: {
                     id: userdata.id,
-                    cet_id: cetUser.cet_id,
+                    cet_id: cet_id,
                 },
             },
             configJwttokenCenter,
             { expiresIn: '1000d' },
         );
-
+        console.log("data", userdata);
+        
         const response = {
             token,
             role: userdata.slug,
             username: userdata.username,
             isAdmin: false,
-            permission: userdata.permission || null,
-            cet_id: cetUser.cet_id,
+            permission: userdata.permissions || null,
+            cet_id: cetUser?.dataValues?.cet_id  || cetUser?.cet_id || null,
             isCet: true,
-            status: true
+            status: true,
+            role_id: userdata.role_id || null,
+            user_id: userdata.id || null,
+            corporate_id: corUser?.dataValues?.corporate_id || null,
         };
-
+        console.log("response", response);
         res.setHeader(
             'Set-Cookie',
             cookie.serialize('cet_token', token, {
