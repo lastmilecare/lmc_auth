@@ -11,7 +11,7 @@ import {
 } from "src/common/helpers/auth.helper";
 import { AuthService } from '../auth/auth.service';
 import { Cetuser } from 'src/models/CetUser';
-
+import { CorporateUser } from 'src/models/corporate-user';
 @Controller('cet')
 export class CetAuthController {
   constructor(
@@ -41,9 +41,10 @@ export class CetAuthController {
                     sendError(res, 404, "no_user_found", 'No user found!');
                     return;
                 }
-                if (result.slug != "cet") {
-                    sendError(res, 401, "Invalid_role", 'Invalid Role');
-                    return;
+
+                const allowedRoles = ['cet', 'corporate'];
+                if (!allowedRoles.includes(result.slug)) {
+                    return sendError(res, 401, 'Invalid_role', 'Invalid Role');
                 }
     
                 const tokenData = await checkUserPassCet(req.body.password, result, res);
@@ -53,12 +54,15 @@ export class CetAuthController {
                 }
     
                 const cetUser = await Cetuser.findOne({ where: { user_id: result.id } });
-                if (!cetUser) {
+                // console.log("cetUser", result);
+
+                const corUser = await CorporateUser.findOne({ where: { user_id: result.id } });
+                // console.log("corUser", corUser);
+                if ((!cetUser) && (!corUser)) {
                     sendError(res, 404, "no_cet_id_found", 'CET ID not found for this user.');
                     return;
                 }
-    
-                tokenData.cet_id = cetUser.cet_id;
+                
                 const logData = {
                     user_id: result.id,
                     action_type: "cet_login",

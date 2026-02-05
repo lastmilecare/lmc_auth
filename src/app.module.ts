@@ -21,6 +21,8 @@ import { Centeruser } from './models/centeruser.model';
 import { TestAccount } from './models/test-account.model';
 import { CenterAuthModule } from './modules/CenterAuth/centerauth.module';
 import { CetAuthModule } from './modules/CetAuth/cetauth.module';
+import { CorporateUser } from './models/corporate-user';
+import { Corporate } from './models/corporate';
 import {PicasoidAuthModule} from './modules/PicasoidAuth/picasoid-auth.module';
 
 @Module({
@@ -34,7 +36,7 @@ import {PicasoidAuthModule} from './modules/PicasoidAuth/picasoid-auth.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       models: [UserN, Role, Permission, RolePermission, UserRole, CETMANAGEMENT, Cetuser,
-        Permissionmetadata, UserLog, Center, Centeruser, TestAccount],
+        Permissionmetadata, UserLog, Center, Centeruser, TestAccount, CorporateUser, Corporate],
       autoLoadModels: true,
       synchronize: false, // Use only in development; use migrations in prod
       dialectOptions: {
@@ -59,20 +61,4 @@ export class AppModule {
     // this.seedPermissions();
   }
 
-  async seedPermissions() {
-    const permissions = [
-      'create_role',
-      'view_roles',
-      'update_role',
-      'add_permission',
-      'remove_permission',
-      'manage_users',
-    ];
-    for (const permName of permissions) {
-      await Permission.findOrCreate({
-        where: { permission_name: permName },
-        defaults: { permission_name: permName },
-      });
-    }
-  }
 }
