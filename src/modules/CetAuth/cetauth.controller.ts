@@ -42,7 +42,7 @@ export class CetAuthController {
                     return;
                 }
 
-                const allowedRoles = ['cet', 'corporate'];
+                const allowedRoles = ['cet', 'corporate','camp'];
                 if (!allowedRoles.includes(result.slug)) {
                     return sendError(res, 401, 'Invalid_role', 'Invalid Role');
                 }
