@@ -38,7 +38,7 @@ export class AuthController {
         return sendError(res, 401, 'account_inactive', 'account inactive!');
       }
 
-      const allowedRoles = ['admin', 'latehar_bdm'];
+      const allowedRoles = ['admin', 'b2c'];
       if (!allowedRoles.includes(result.slug)) {
         return sendError(res, 401, 'Invalid_role', 'Invalid Role');
       }

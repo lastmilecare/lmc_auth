@@ -11,7 +11,6 @@ export class AuthService {
       const result = await User.findOne({
         where: {
           email: email,
-          isAdmin: true,
         },
         include: [
           {
