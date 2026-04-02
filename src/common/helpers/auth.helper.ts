@@ -24,6 +24,8 @@ type TokenResponse = {
     status?: any;
     cet_id?: any;
     isCet?: any;
+    email?: any;
+    name?: any;
 };
 
 export const checkUserPass = async (
@@ -48,12 +50,14 @@ export const checkUserPass = async (
 
     return {
         token,
-        role: userdata.slug,
+        role: userdata.role,
         username: userdata.username,
         isAdmin: userdata.isAdmin,
         permission: userdata.permission || null,
         user_id: userdata.id || null,
-        status: true
+        status: true,
+        email: userdata.email || null,
+        name: userdata.name || null,
     };
 };
 

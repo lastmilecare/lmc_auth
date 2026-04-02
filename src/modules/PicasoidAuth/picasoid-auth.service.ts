@@ -49,6 +49,9 @@ export class AuthService {
       role: user.roleb2c.name, 
       permissions,
       password: user.password, 
+      name: user.name,
+      username: user.username,
+      isAdmin: user.isAdmin,
     };
   }
 }
