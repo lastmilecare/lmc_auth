@@ -23,8 +23,11 @@ import { CenterAuthModule } from './modules/CenterAuth/centerauth.module';
 import { CetAuthModule } from './modules/CetAuth/cetauth.module';
 import { CorporateUser } from './models/corporate-user';
 import { Corporate } from './models/corporate';
-import {PicasoidAuthModule} from './modules/PicasoidAuth/picasoid-auth.module';
-
+import { PicasoidAuthModule } from './modules/PicasoidAuth/picasoid-auth.module';
+import { RolePermissionB2C } from './models/role_permission_b2c.model';
+import { RoleB2C } from './models/role_b2c.model';
+import { PermissionB2C } from './models/permission_b2c.model';
+import { Tenant } from './models/tenant.model';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -35,8 +38,26 @@ import {PicasoidAuthModule} from './modules/PicasoidAuth/picasoid-auth.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      models: [UserN, Role, Permission, RolePermission, UserRole, CETMANAGEMENT, Cetuser,
-        Permissionmetadata, UserLog, Center, Centeruser, TestAccount, CorporateUser, Corporate],
+      models: [
+        UserN,
+        Role,
+        Permission,
+        RolePermission,
+        UserRole,
+        CETMANAGEMENT,
+        Cetuser,
+        Permissionmetadata,
+        UserLog,
+        Center,
+        Centeruser,
+        TestAccount,
+        CorporateUser,
+        Corporate,
+        RolePermissionB2C,
+        RoleB2C,
+        PermissionB2C,
+        Tenant,
+      ],
       autoLoadModels: true,
       synchronize: false, // Use only in development; use migrations in prod
       dialectOptions: {
@@ -51,7 +72,7 @@ import {PicasoidAuthModule} from './modules/PicasoidAuth/picasoid-auth.module';
     RolesModule,
     CenterAuthModule,
     CetAuthModule,
-    PicasoidAuthModule
+    PicasoidAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -60,5 +81,4 @@ export class AppModule {
   constructor(private sequelize: Sequelize) {
     // this.seedPermissions();
   }
-
 }

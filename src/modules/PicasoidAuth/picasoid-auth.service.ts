@@ -1,51 +1,54 @@
-import { Injectable } from '@nestjs/common';
-import { Role } from 'src/models/Roles';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { RoleB2C as Role } from 'src/models/role_b2c.model';
 import { UserN as User } from 'src/models/UsersN';
-import { Permission } from 'src/models/Permissions';
-import { Permissionmetadata } from 'src/models/PermissionsMetaData';
+import { PermissionB2C as Permission } from 'src/models/permission_b2c.model';
+import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/sequelize';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
+  constructor(
+    @InjectModel(User) private userModel: typeof User,
+    private jwtService: JwtService,
+  ) {}
+
   async adminAuth(email: string, password: string) {
-    try {
-      const result = await User.findOne({
-        where: {
-          email: email,
+    const user = await this.userModel.findOne({
+      where: { email },
+      include: [
+        {
+          model: Role,
+          include: [Permission],
         },
-        include: [
-          {
-            model: Permission,
-            as: 'permission',
-            include: [
-              {
-                model: Permissionmetadata,
-                as: 'Permissionmetadata',
-              },
-            ],
-          },
-        ],
-      });
+      ],
+    });
 
-      if (result) {
-        if ((result.status || result.dataValues.status) === false) {
-          return { status: 'account_inactive' };
-        }
-        let roleId = result.role_id || result.dataValues.role_id
-        const findRole = await Role.findOne({
-          where: { id: roleId },
-          attributes: ['slug', 'role_title'],
-        });
-
-        const mergedData = {
-          ...result.toJSON(),
-          ...findRole.toJSON(),
-        };
-        return mergedData;
-      } else {
-        return { status: 'no_user_found' };
-      }
-    } catch (error) {
-      throw new Error(error);
+    // No user found
+    if (!user) {
+      return { status: 'no_user_found' };
     }
+
+    // Account inactive — your column is `status` not `isActive`
+    if (!user.status) {
+      return { status: 'account_inactive' };
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+    // Build "action:resource" permission strings for JWT
+    const permissions = user.roleb2c.permissions.map(
+      (p: Permission) => `${p.action}:${p.resource}`,
+    );
+
+    return {
+      id: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      role: user.roleb2c.name, 
+      permissions,
+      password: user.password, 
+    };
   }
 }

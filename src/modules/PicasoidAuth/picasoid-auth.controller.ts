@@ -2,12 +2,9 @@ import { Controller, Post, Body, Req, Res } from '@nestjs/common';
 import slugify from 'slugify';
 const { sendSuccess, sendError } = require('../../../src/util/responseHandler');
 import { AuthService } from './picasoid-auth.service';
-import {
-  checkUserPass,
-  createUserLogs,
-} from 'src/common/helpers/auth.helper';
+import { checkUserPass, createUserLogs } from 'src/common/helpers/auth.helper';
 
-@Controller('picasoid/admin')
+@Controller('b2c/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
   @Post('login')
@@ -17,12 +14,7 @@ export class AuthController {
         return sendError(res, 400, 'Email ID Required', 'Email ID Required');
       }
       if (!req.body.password) {
-        return sendError(
-          res,
-          400,
-          'Password ID Required',
-          'Password ID Required',
-        );
+        return sendError(res, 400, 'Password Required', 'Password Required');
       }
 
       const result = await this.authService.adminAuth(
@@ -35,14 +27,16 @@ export class AuthController {
       }
 
       if (result.status === 'account_inactive') {
-        return sendError(res, 401, 'account_inactive', 'account inactive!');
+        return sendError(res, 401, 'account_inactive', 'Account Inactive!');
       }
 
-      const allowedRoles = ['admin', 'b2c'];
-      if (!allowedRoles.includes(result.slug)) {
+      // Role-based access — using role name instead of slug now
+      const allowedRoles = ['LMC_ADMIN', 'TENANT_ADMIN'];
+      if (!allowedRoles.includes(result.role)) {
         return sendError(res, 401, 'Invalid_role', 'Invalid Role');
       }
 
+      // checkUserPass handles bcrypt compare + JWT signing
       const tokenData = await checkUserPass(req.body.password, result, res);
 
       if (tokenData.status === 'invalid_password') {
