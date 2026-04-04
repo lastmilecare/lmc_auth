@@ -26,4 +26,7 @@ export class PermissionB2C extends Model<PermissionB2C> {
 
   @BelongsToMany(() => RoleB2C, () => RolePermissionB2C)
   declare roles: RoleB2C[];
+
+  @Column({ type: DataType.STRING, allowNull: false })
+  declare description: string;
 }

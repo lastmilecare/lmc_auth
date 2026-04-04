@@ -28,6 +28,8 @@ import { RolePermissionB2C } from './models/role_permission_b2c.model';
 import { RoleB2C } from './models/role_b2c.model';
 import { PermissionB2C } from './models/permission_b2c.model';
 import { Tenant } from './models/tenant.model';
+import { Reflector } from '@nestjs/core';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -75,7 +77,7 @@ import { Tenant } from './models/tenant.model';
     PicasoidAuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,Reflector],
 })
 export class AppModule {
   constructor(private sequelize: Sequelize) {

@@ -225,16 +225,22 @@ export class UsersService {
 
   async createUser(
     requestingUser: any,
-    dto: { email: string; password: string; roleId: string },
+    dto: {
+      email: string;
+      password: string;
+      roleId: string;
+      tenantId?: string; // required when LMC Admin is creating
+    },
   ) {
-    const tenantId = requestingUser.tenantId;
+    // Tenant Admin locked to own tenant — LMC Admin must pass tenantId in body
+    const targetTenantId = requestingUser.tenantId ?? dto.tenantId;
+    if (!targetTenantId) {
+      throw new ForbiddenException('tenantId is required');
+    }
 
-    // Verify role belongs to caller's tenant
-    const role = await this.roleB2CModel.findOne({
-      where: { id: dto.roleId, tenantId },
-    });
-    if (!role)
-      throw new ForbiddenException('Role does not belong to your tenant');
+    // Roles are global (no tenantId on roles) — just verify role exists
+    const role = await this.roleB2CModel.findByPk(dto.roleId);
+    if (!role) throw new NotFoundException('Role not found');
 
     const exists = await this.userModel.findOne({
       where: { email: dto.email },
@@ -245,27 +251,35 @@ export class UsersService {
     const user = await this.userModel.create({
       email: dto.email,
       password: hashed,
-      tenantId,
+      tenantId: targetTenantId,
       roleId: dto.roleId,
     } as any);
 
     return { id: user.id, email: user.email, tenantId: user.tenantId };
   }
 
-  async getUsers(requestingUser: any) {
+  // ── Get Users ───────────────────────────────────────────────────────────
+  async getUsers(requestingUser: any, query?: { tenantId?: string }) {
     const where: any = {};
-    // Tenant admin only sees their own tenant's users
+
     if (requestingUser.tenantId) {
+      // Tenant Admin — always scoped, ignore any query params
       where.tenantId = requestingUser.tenantId;
+    } else if (query?.tenantId) {
+      // LMC Admin — optional filter by tenantId
+      where.tenantId = query.tenantId;
     }
+    // LMC Admin with no filter → all users across all tenants
 
     return this.userModel.findAll({
       where,
       attributes: ['id', 'email', 'tenantId', 'status'],
-      include: [{ model: RoleB2C, attributes: ['name'] }],
+      include: [{ model: RoleB2C, attributes: ['id', 'name'] }],
+      order: [['createdAt', 'DESC']],
     });
   }
 
+  // ── Update User ─────────────────────────────────────────────────────────
   async updateUser(
     requestingUser: any,
     userId: string,
@@ -274,23 +288,41 @@ export class UsersService {
     const user = await this.userModel.findByPk(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    if (requestingUser.tenantId && user.tenantId !== requestingUser.tenantId) {
-      throw new ForbiddenException('Cannot modify users outside your tenant');
+    this.assertTenantAccess(requestingUser, user.tenantId as any);
+
+    // Validate new role if being changed
+    if (dto.roleId) {
+      const role = await this.roleB2CModel.findByPk(dto.roleId);
+      if (!role) throw new NotFoundException('Role not found');
     }
 
     await user.update(dto);
     return { id: user.id, email: user.email, status: user.status };
   }
 
+  // ── Delete User ─────────────────────────────────────────────────────────
   async deleteUser(requestingUser: any, userId: string) {
     const user = await this.userModel.findByPk(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    if (requestingUser.tenantId && user.tenantId !== requestingUser.tenantId) {
-      throw new ForbiddenException('Cannot delete users outside your tenant');
+    this.assertTenantAccess(requestingUser, user.tenantId as any);
+
+    // Prevent self-deletion
+    if (user.id === requestingUser.userId) {
+      throw new ForbiddenException('You cannot delete your own account');
     }
 
     await user.destroy();
     return { message: 'User deleted successfully' };
+  }
+
+  // ── Private: block cross-tenant access ─────────────────────────────────
+  private assertTenantAccess(requestingUser: any, targetTenantId: string) {
+    if (
+      requestingUser.tenantId && // is a Tenant Admin
+      requestingUser.tenantId !== targetTenantId // targeting another tenant
+    ) {
+      throw new ForbiddenException('Cannot access users outside your tenant');
+    }
   }
 }
