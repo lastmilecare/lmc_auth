@@ -154,7 +154,6 @@ export class UsersService {
 
     const uniquePermissions = [...new Set(allPermissions)];
 
-    console.log('Unique Permissions:', uniquePermissions);
 
     return uniquePermissions;
   }
@@ -176,7 +175,6 @@ export class UsersService {
       nest: true,
     });
 
-    console.log(userRoles);
     const uniqueRoles = await Promise.all(
       userRoles.map(async (role: any) => {
         const roles = await this.rolePermissionModel.findAll({
@@ -199,7 +197,6 @@ export class UsersService {
           };
         });
 
-        console.log(roles);
         return {
           id: role.role.id,
           role_title: role.role.role_title,

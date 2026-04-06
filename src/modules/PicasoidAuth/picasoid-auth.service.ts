@@ -19,7 +19,13 @@ export class AuthService {
       include: [
         {
           model: Role,
-          include: [Permission],
+          as: 'roleb2c',
+          include: [
+            {
+              model: Permission,
+              as: 'permissions',
+            },
+          ],
         },
       ],
     });
@@ -46,9 +52,9 @@ export class AuthService {
       id: user.id,
       email: user.email,
       tenantId: user.tenantId,
-      role: user.roleb2c.name, 
+      role: user.roleb2c.name,
       permissions,
-      password: user.password, 
+      password: user.password,
       name: user.name,
       username: user.username,
       isAdmin: user.isAdmin,

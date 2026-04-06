@@ -23,7 +23,6 @@ export class VerifyTokenGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<RequestWithUser>();
     const authHeader = req.headers.authorization;
-    console.log(authHeader);
     if (!authHeader) {
       this.logger.warn('No Authorization header provided');
       throw new UnauthorizedException('Authorization header is required');

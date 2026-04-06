@@ -120,8 +120,7 @@ const findCenterGroup = async (centerId) => {
  */
 const resolveTargetCenters = async (centerId) => {
     if (!centerId) {
-        console.log('No center_id provided in payload - returning results from ALL centers');
-        return {
+       return {
             targetCenterIds: [],
             isGroupSearch: false,
             isAllCentersSearch: true,
@@ -133,7 +132,6 @@ const resolveTargetCenters = async (centerId) => {
     const groupInfo = await findCenterGroup(centerId);
     
     if (groupInfo.isInGroup) {
-        console.log(`Center ${centerId} belongs to ${groupInfo.groupName}: [${groupInfo.centerIds.join(', ')}]`);
         return {
             targetCenterIds: groupInfo.centerIds,
             isGroupSearch: true,
@@ -142,7 +140,6 @@ const resolveTargetCenters = async (centerId) => {
             groupInfo: groupInfo
         };
     } else {
-        console.log(`Center ${centerId} is not in any group - returning results from ALL centers`);
         return {
             targetCenterIds: [],
             isGroupSearch: false,
@@ -230,15 +227,9 @@ const processCenterGrouping = async (centerId, options = {}) => {
  * @param {Object} groupingInfo - The result from processCenterGrouping
  */
 const logGroupingInfo = (groupingInfo) => {
-    console.log('=== Center Grouping Info ===');
-    console.log(`Requested Center: ${groupingInfo.requestedCenter || 'None'}`);
-    console.log(`Target Centers: ${groupingInfo.targetCenterIds.length > 0 ? groupingInfo.targetCenterIds.join(', ') : 'ALL_CENTERS'}`);
-    console.log(`Is Group Search: ${groupingInfo.isGroupSearch}`);
-    console.log(`Is All Centers Search: ${groupingInfo.isAllCentersSearch}`);
-    if (groupingInfo.groupInfo) {
-        console.log(`Group Name: ${groupingInfo.groupInfo.groupName}`);
+   if (groupingInfo.groupInfo) {
     }
-    console.log('============================');
+   
 };
 
 module.exports = {

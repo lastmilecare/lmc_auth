@@ -30,7 +30,6 @@ export class RbacGuard implements CanActivate {
       
       const userPermissions = await this.userService.getUserPermissions(userId);
       
-      console.log("userPermissions -->  ", userPermissions);
       // Check if user has all required permissions
       const hasAllPermissions = requiredPermissions.every(permission => 
         userPermissions.includes(permission)

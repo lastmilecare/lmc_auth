@@ -29,7 +29,7 @@ import { RoleB2C } from './models/role_b2c.model';
 import { PermissionB2C } from './models/permission_b2c.model';
 import { Tenant } from './models/tenant.model';
 import { Reflector } from '@nestjs/core';
-
+import { TenantsModule } from './modules/tenants/tenants.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -75,9 +75,10 @@ import { Reflector } from '@nestjs/core';
     CenterAuthModule,
     CetAuthModule,
     PicasoidAuthModule,
+    TenantsModule,
   ],
   controllers: [AppController],
-  providers: [AppService,Reflector],
+  providers: [AppService, Reflector],
 })
 export class AppModule {
   constructor(private sequelize: Sequelize) {

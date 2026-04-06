@@ -23,15 +23,15 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
+      const decoded = jwt.verify(token, process.env.JWT_CENTER) as any;
 
       // Attach decoded payload to req.user — same shape across all controllers
       request.user = {
-        userId:      decoded.sub,
-        email:       decoded.email,
-        tenantId:    decoded.tenantId,    // null = LMC Admin
-        role:        decoded.role,
-        permissions: decoded.permissions, // ['create:user', 'read:role', ...]
+        userId:      decoded.data.id,
+        email:       decoded.data.email,
+        tenantId:    decoded.data.tenantId,    // null = LMC Admin
+        role:        decoded.data.role,
+        permissions: decoded.data.permissions, // ['create:user', 'read:role', ...]
       };
 
       return true;

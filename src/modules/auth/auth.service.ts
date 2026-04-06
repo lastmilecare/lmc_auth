@@ -91,7 +91,6 @@ export class AuthService {
         return { status: 'no_user_found' };
       }
     } catch (error) {
-      console.log(error);
       throw new Error(error);
     }
   }
@@ -137,14 +136,12 @@ export class AuthService {
           ...result.toJSON(),
           ...findRole.toJSON(),
         };
-        // console.log(mergedData);
 
         return mergedData;
       } else {
         return { status: 'no_user_found' };
       }
     } catch (error) {
-      console.log(error);
       throw new Error(error);
     }
   }

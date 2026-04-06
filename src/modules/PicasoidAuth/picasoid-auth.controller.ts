@@ -2,7 +2,7 @@ import { Controller, Post, Body, Req, Res } from '@nestjs/common';
 import slugify from 'slugify';
 const { sendSuccess, sendError } = require('../../../src/util/responseHandler');
 import { AuthService } from './picasoid-auth.service';
-import { checkUserPass, createUserLogs } from 'src/common/helpers/auth.helper';
+import { checkUserPass, createUserLogs,checkUserPassB2C } from 'src/common/helpers/auth.helper';
 
 @Controller('b2c/auth')
 export class AuthController {
@@ -37,7 +37,7 @@ export class AuthController {
       }
 
       // checkUserPass handles bcrypt compare + JWT signing
-      const tokenData = await checkUserPass(req.body.password, result, res);
+      const tokenData = await checkUserPassB2C(req.body.password, result, res);
 
       if (tokenData.status === 'invalid_password') {
         return sendError(res, 404, 'invalid_password', 'Invalid Password');
