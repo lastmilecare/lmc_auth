@@ -3,14 +3,17 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
+import { InjectModel, InjectConnection } from '@nestjs/sequelize';
 import { PermissionB2C as Permission } from '../../models/permission_b2c.model';
 import { RolePermissionB2C as RolePermission } from '../../models/role_permission_b2c.model';
 import { RoleB2C as Role } from '../../models/role_b2c.model';
+import { Sequelize } from 'sequelize-typescript';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class PermissionsService {
   constructor(
+    @InjectConnection() private sequelize: Sequelize,
     @InjectModel(Permission) private permModel: typeof Permission,
     @InjectModel(RolePermission) private rpModel: typeof RolePermission,
     @InjectModel(Role) private roleModel: typeof Role,
@@ -43,21 +46,65 @@ export class PermissionsService {
     return permission;
   }
 
-  // ── Get All Permissions ─────────────────────────────────────────────────
-  // Both LMC Admin and Tenant Admin can view
-  // Optionally filter by resource e.g. ?resource=user
-  async getAllPermissions(query?: { resource?: string }) {
-    const where: any = {};
-    if (query?.resource) where.resource = query.resource;
+  async getAllPermissions(query?: {
+    page?: number;
+    limit?: number;
+    action?: string;
+    resource?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const page = Math.max(Number(query?.page) || 1, 1);
+    const limit = Math.min(Number(query?.limit) || 10, 100);
+    const offset = (page - 1) * limit;
 
-    return this.permModel.findAll({
+    const where: any = {};
+
+    if (query?.action)
+      where.action = { [Op.iLike]: `%${query.action.trim()}%` };
+    if (query?.resource)
+      where.resource = { [Op.iLike]: `%${query.resource.trim()}%` };
+
+    if (query?.startDate || query?.endDate) {
+      where.createdAt = {};
+      if (query.startDate) {
+        const start = new Date(query.startDate);
+        if (!isNaN(start.getTime())) where.createdAt[Op.gte] = start;
+      }
+      if (query.endDate) {
+        const end = new Date(query.endDate);
+        if (!isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          where.createdAt[Op.lte] = end;
+        }
+      }
+    }
+
+    const { count, rows } = await this.permModel.findAndCountAll({
       where,
-      attributes: ['id', 'action', 'resource', 'description'],
+      attributes: ['id', 'action', 'resource', 'description', 'createdAt'],
       order: [
         ['resource', 'ASC'],
         ['action', 'ASC'],
       ],
+      limit,
+      offset,
+      distinct: true,
     });
+
+    const totalPages = Math.ceil(count / limit);
+
+    return {
+      data: rows.map((r) => r.toJSON()),
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   }
 
   // ── Get Single Permission ───────────────────────────────────────────────
@@ -127,7 +174,7 @@ export class PermissionsService {
       const exists = await this.permModel.findOne({
         where: { action: newAction, resource: newResource },
       });
-      if (exists && exists.id != id as any) {
+      if (exists && exists.id != (id as any)) {
         throw new ConflictException(
           `Permission '${newAction}:${newResource}' already exists`,
         );

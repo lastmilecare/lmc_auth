@@ -30,6 +30,7 @@ import { PermissionB2C } from './models/permission_b2c.model';
 import { Tenant } from './models/tenant.model';
 import { Reflector } from '@nestjs/core';
 import { TenantsModule } from './modules/tenants/tenants.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -76,6 +77,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     CetAuthModule,
     PicasoidAuthModule,
     TenantsModule,
+    PermissionsModule
   ],
   controllers: [AppController],
   providers: [AppService, Reflector],
