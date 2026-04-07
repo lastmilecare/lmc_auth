@@ -61,11 +61,11 @@ import { TenantsModule } from './modules/tenants/tenants.module';
         Tenant,
       ],
       autoLoadModels: true,
-      synchronize: false, // Use only in development; use migrations in prod
+      synchronize: false, 
       dialectOptions: {
         ssl: {
           require: true,
-          rejectUnauthorized: false, // Use only in development
+          rejectUnauthorized: false, 
         },
       },
     }),

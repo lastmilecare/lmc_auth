@@ -1,12 +1,20 @@
-import { Column, Model, Table, HasMany, BelongsTo, BelongsToMany, DataType,ForeignKey } from 'sequelize-typescript';
-import { Role } from './Roles'; 
-import { Permission } from './Permissions';  
-import { Cetuser } from './CetUser';  
-import { CETMANAGEMENT } from './CetManagement'; 
+import {
+  Column,
+  Model,
+  Table,
+  HasMany,
+  BelongsTo,
+  BelongsToMany,
+  DataType,
+  ForeignKey,
+} from 'sequelize-typescript';
+import { Role } from './Roles';
+import { Permission } from './Permissions';
+import { Cetuser } from './CetUser';
+import { CETMANAGEMENT } from './CetManagement';
 import { Tenant } from './tenant.model';
-import {RoleB2C } from './role_b2c.model';
+import { RoleB2C } from './role_b2c.model';
 @Table({ tableName: 'Users' })
-
 export class UserN extends Model {
   @Column
   declare username: string;
@@ -23,7 +31,7 @@ export class UserN extends Model {
   @Column
   declare email: string;
   @Column
-  declare   password: string;
+  declare password: string;
 
   @Column
   declare phone: string;
@@ -47,7 +55,10 @@ export class UserN extends Model {
   @BelongsTo(() => Role, { foreignKey: 'role_id', as: 'role' })
   role: Role;
 
-  @BelongsTo(() => Permission, { foreignKey: 'permission_id', as: 'permission' })
+  @BelongsTo(() => Permission, {
+    foreignKey: 'permission_id',
+    as: 'permission',
+  })
   permission: Permission;
 
   @HasMany(() => Cetuser, { foreignKey: 'user_id', as: 'Cetusers' })
@@ -57,7 +68,7 @@ export class UserN extends Model {
     through: () => Cetuser,
     foreignKey: 'user_id',
     otherKey: 'cet_id',
-    as: 'CETManagements'
+    as: 'CETManagements',
   })
   CETManagements: CETMANAGEMENT[];
 
@@ -68,11 +79,17 @@ export class UserN extends Model {
   @BelongsTo(() => Tenant, { as: 'tenant' })
   declare tenant: Tenant;
 
+  // @ForeignKey(() => RoleB2C)
+  // @Column({ type: DataType.INTEGER, allowNull: true, field: 'b2c_role_id' })
+  // declare b2cRoleId: number | null;
+
+  // @BelongsTo(() => RoleB2C, { as: 'roleb2c' })
+  // declare roleb2c: RoleB2C;
+
   @ForeignKey(() => RoleB2C)
-  @Column({ type: DataType.INTEGER, allowNull: false, field: 'b2c_role_id' })
-  declare b2cRoleId: number;
+  @Column({ field: 'b2c_role_id' })
+  declare b2cRoleId: number | null;
 
   @BelongsTo(() => RoleB2C, { as: 'roleb2c' })
   declare roleb2c: RoleB2C;
-
 }

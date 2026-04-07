@@ -6,7 +6,7 @@ import { PermissionB2C }   from '../../models/permission_b2c.model';
 import { RolePermissionB2C } from '../../models/role_permission_b2c.model';
 import { TenantsService }    from './tenants.service';
 import { TenantsController } from './tenants.controller';
-
+import { UserN } from 'src/models/UsersN';
 @Module({
   imports: [
     SequelizeModule.forFeature([
@@ -14,6 +14,7 @@ import { TenantsController } from './tenants.controller';
       RoleB2C,
       PermissionB2C,
       RolePermissionB2C,
+      UserN
     ]),
   ],
   providers:   [TenantsService],

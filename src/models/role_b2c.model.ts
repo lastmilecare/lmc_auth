@@ -36,7 +36,7 @@ export class RoleB2C extends Model<RoleB2C> {
   @BelongsTo(() => Tenant)
   declare tenant: Tenant;
 
-  @HasMany(() => UserN)
+  @HasMany(() => UserN, { foreignKey: 'b2c_role_id', as: 'users' })
   declare users: UserN[];
 
   // @BelongsToMany(() => PermissionB2C, () => RolePermissionB2C)
@@ -45,7 +45,7 @@ export class RoleB2C extends Model<RoleB2C> {
     through: () => RolePermissionB2C,
     foreignKey: 'role_id',
     otherKey: 'permission_id',
-    as: 'permissions', 
+    as: 'permissions',
   })
   declare permissions: PermissionB2C[];
 }
