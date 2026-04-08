@@ -9,7 +9,7 @@ import {
   Param,
   UseGuards,
   Query,
-  ParseIntPipe, 
+  ParseIntPipe,
   Body,
 } from '@nestjs/common';
 import { TenantsService } from './tenants.service';
@@ -53,7 +53,6 @@ export class TenantsController {
     }
   }
 
-  
   @Get()
   @RequirePermissions('read:tenant')
   async findAll(@Res() res: any, @Query() query: any) {
@@ -65,12 +64,26 @@ export class TenantsController {
     }
   }
 
+  @Get('all')
+  @RequirePermissions('read:tenant')
+  async getAllTenant(@Req() req: any, @Res() res: any) {
+    try {
+      const tenant = await this.tenantsService.getAllTenant();
+      return sendSuccess(res, 200, tenant, 'Tenant fetched successfully');
+    } catch (error: any) {
+      if (error.status === 404) {
+        return sendError(res, 404, 'tenant_not_found');
+      }
+      return sendError(res, 500, 'internal_server_error');
+    }
+  }
+
   @Get(':id')
   @RequirePermissions('read:tenant')
   async findOne(
-    @Req() req: any, 
-    @Res() res: any, 
-    @Param('id', ParseIntPipe) id: number 
+    @Req() req: any,
+    @Res() res: any,
+    @Param('id', ParseIntPipe) id: number,
   ) {
     try {
       const tenant = await this.tenantsService.findOne(id);
@@ -88,8 +101,8 @@ export class TenantsController {
   async updateTenant(
     @Req() req: any,
     @Res() res: any,
-    @Param('id', ParseIntPipe) id: number, 
-    @Body() body: { name?: string; status?: boolean } 
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { name?: string; status?: boolean },
   ) {
     try {
       const tenant = await this.tenantsService.updateTenant(id, {
@@ -122,7 +135,7 @@ export class TenantsController {
   async toggleStatus(
     @Req() req: any,
     @Res() res: any,
-    @Param('id', ParseIntPipe) id: number 
+    @Param('id', ParseIntPipe) id: number,
   ) {
     try {
       const result = await this.tenantsService.toggleStatus(id);
@@ -149,7 +162,7 @@ export class TenantsController {
   async deleteTenant(
     @Req() req: any,
     @Res() res: any,
-    @Param('id', ParseIntPipe) id: number 
+    @Param('id', ParseIntPipe) id: number,
   ) {
     try {
       const result = await this.tenantsService.deleteTenant(id);

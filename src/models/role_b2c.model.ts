@@ -48,4 +48,10 @@ export class RoleB2C extends Model<RoleB2C> {
     as: 'permissions',
   })
   declare permissions: PermissionB2C[];
+
+  @Column({ type: DataType.STRING, allowNull: false })
+  declare description: string;
+
+  @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
+  declare status: boolean;
 }

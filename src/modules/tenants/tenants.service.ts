@@ -3,13 +3,13 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import {  Op } from 'sequelize';
+import { Op } from 'sequelize';
 import { Tenant } from '../../models/tenant.model';
 import { RoleB2C } from '../../models/role_b2c.model';
 import { PermissionB2C } from '../../models/permission_b2c.model';
 import { RolePermissionB2C } from '../../models/role_permission_b2c.model';
-import { InjectConnection,InjectModel } from '@nestjs/sequelize'; // 👈
-import { Sequelize } from 'sequelize-typescript'; 
+import { InjectConnection, InjectModel } from '@nestjs/sequelize'; // 👈
+import { Sequelize } from 'sequelize-typescript';
 
 @Injectable()
 export class TenantsService {
@@ -118,7 +118,7 @@ export class TenantsService {
       where,
       limit,
       offset,
-      order: [['created_at', 'DESC']], 
+      order: [['created_at', 'DESC']],
     });
 
     return {
@@ -221,6 +221,16 @@ export class TenantsService {
       name: tenant.name,
       status: newStatus,
       message: newStatus ? 'Tenant activated' : 'Tenant deactivated',
+    };
+  }
+
+  async getAllTenant() {
+    const { count, rows } = await this.tenantModel.findAndCountAll();
+
+    if (!count) throw new NotFoundException('Tenant not found');
+    return {
+      total: count,
+      data: rows,
     };
   }
 }

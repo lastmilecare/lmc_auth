@@ -31,6 +31,7 @@ import { Tenant } from './models/tenant.model';
 import { Reflector } from '@nestjs/core';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
+import { B2CRolesModule } from './modules/b2cRoles/roles.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -62,11 +63,11 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
         Tenant,
       ],
       autoLoadModels: true,
-      synchronize: false, 
+      synchronize: false,
       dialectOptions: {
         ssl: {
           require: true,
-          rejectUnauthorized: false, 
+          rejectUnauthorized: false,
         },
       },
     }),
@@ -77,7 +78,8 @@ import { PermissionsModule } from './modules/permissions/permissions.module';
     CetAuthModule,
     PicasoidAuthModule,
     TenantsModule,
-    PermissionsModule
+    PermissionsModule,
+    B2CRolesModule
   ],
   controllers: [AppController],
   providers: [AppService, Reflector],

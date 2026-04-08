@@ -14,7 +14,7 @@ import { PermissionsService } from './permissions.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-authb2c.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
-const { sendSuccess, sendError } = require('../../../src/util/responseHandler');
+import { sendSuccess, sendError } from '../../../src/util/responseHandler';
 import {
   createUserLogs,
   checkUserPassCenter,
@@ -29,10 +29,10 @@ export class PermissionsController {
   async createPermission(@Req() req: any, @Res() res: any) {
     try {
       if (!req.body.action) {
-        return sendError(res, 400, 'action_required', 'Action is required');
+        return sendError(res, 400, 'Action is required');
       }
       if (!req.body.resource) {
-        return sendError(res, 400, 'resource_required', 'Resource is required');
+        return sendError(res, 400, 'Resource is required');
       }
 
       const permission = await this.permissionsService.createPermission({
@@ -55,11 +55,11 @@ export class PermissionsController {
         permission,
         'Permission created successfully',
       );
-    } catch (error) {
+    } catch (error: any) {
       if (error.status === 409) {
         return sendError(res, 409, 'permission_exists');
       }
-      return sendError(res, 500, 'internal_server_error', error);
+      return sendError(res, 500, 'internal_server_error');
     }
   }
 
@@ -81,8 +81,8 @@ export class PermissionsController {
         permissions,
         'Permissions fetched successfully',
       );
-    } catch (error) {
-      return sendError(res, 500, 'internal_server_error', error);
+    } catch (error: any) {
+      return sendError(res, 500, error.message);
     }
   }
 
@@ -94,8 +94,8 @@ export class PermissionsController {
     try {
       const grouped = await this.permissionsService.getPermissionsGrouped();
       return sendSuccess(res, 200, grouped, 'Permissions fetched successfully');
-    } catch (error) {
-      return sendError(res, 500, 'internal_server_error', error);
+    } catch (error: any) {
+      return sendError(res, 500, error);
     }
   }
 
@@ -115,11 +115,11 @@ export class PermissionsController {
         role,
         'Role permissions fetched successfully',
       );
-    } catch (error) {
+    } catch (error: any) {
       if (error.status === 404) {
-        return sendError(res, 404, 'role_not_found', error.message);
+        return sendError(res, 404, 'Role not found');
       }
-      return sendError(res, 500, 'internal_server_error', error);
+      return sendError(res, 500, error.message);
     }
   }
 
@@ -139,11 +139,11 @@ export class PermissionsController {
         permission,
         'Permission fetched successfully',
       );
-    } catch (error) {
+    } catch (error: any) {
       if (error.status === 404) {
-        return sendError(res, 404, 'permission_not_found', error.message);
+        return sendError(res, 404, 'permission_not_found');
       }
-      return sendError(res, 500, 'internal_server_error', error);
+      return sendError(res, 500, error.message);
     }
   }
 
@@ -176,14 +176,14 @@ export class PermissionsController {
         permission,
         'Permission updated successfully',
       );
-    } catch (error) {
+    } catch (error: any) {
       if (error.status === 404) {
-        return sendError(res, 404, 'permission_not_found', error.message);
+        return sendError(res, 404, 'permission_not_found');
       }
       if (error.status === 409) {
-        return sendError(res, 409, 'permission_exists', error.message);
+        return sendError(res, 409, 'permission_exists');
       }
-      return sendError(res, 500, 'internal_server_error', error);
+      return sendError(res, 500, error.message);
     }
   }
 
@@ -207,11 +207,11 @@ export class PermissionsController {
       });
 
       return sendSuccess(res, 200, result, 'Permission deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       if (error.status === 404) {
-        return sendError(res, 404, 'permission_not_found', error.message);
+        return sendError(res, 404, 'permission_not_found');
       }
-      return sendError(res, 500, 'internal_server_error', error);
+      return sendError(res, 500,  error.message);
     }
   }
 }
