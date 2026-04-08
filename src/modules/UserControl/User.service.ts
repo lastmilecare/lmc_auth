@@ -1,106 +1,246 @@
+// src/users/User.service.ts
 import {
   Injectable,
-  BadRequestException,
   ForbiddenException,
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
 import { UserN as User } from '../../models/UsersN';
-import { UserRole } from '../../models/user-role';
-import { Role } from '../../models/Roles';
-import { Permission } from '../../models/Permissions';
-import { RolePermission } from '../../models/role-permission';
+import { RoleB2C } from '../../models/role_b2c.model';
 import * as bcrypt from 'bcrypt';
-import { RoleB2C } from 'src/models/role_b2c.model';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User) private userModel: typeof User,
-    @InjectModel(UserRole) private userRoleModel: typeof UserRole,
-    @InjectModel(Role) private roleModel: typeof Role,
-    @InjectModel(Permission) private permissionModel: typeof Permission,
-    @InjectModel(RolePermission)
-    private rolePermissionModel: typeof RolePermission,
     @InjectModel(RoleB2C) private roleB2CModel: typeof RoleB2C,
   ) {}
 
+  // ── Create User ─────────────────────────────────────────────────────────
   async createUser(
     requestingUser: any,
     dto: {
       email: string;
       password: string;
-      roleId: string;
-      tenantId?: string; // required when LMC Admin is creating
+      b2cRoleId: number; // ← b2c_role_id
+      tenantId?: number; // ← tenant_id
+      name?: string;
+      username?: string;
+      phone?: string;
+      attributes?: Record<string, any>; // jsonb
     },
   ) {
-    // Tenant Admin locked to own tenant — LMC Admin must pass tenantId in body
     const targetTenantId = requestingUser.tenantId ?? dto.tenantId;
     if (!targetTenantId) {
       throw new ForbiddenException('tenantId is required');
     }
 
-    // Roles are global (no tenantId on roles) — just verify role exists
-    const role = await this.roleB2CModel.findByPk(dto.roleId);
+    // Verify role exists
+    const role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
     if (!role) throw new NotFoundException('Role not found');
 
+    // Check email uniqueness
     const exists = await this.userModel.findOne({
       where: { email: dto.email },
     });
     if (exists) throw new ConflictException('Email already in use');
 
     const hashed = await bcrypt.hash(dto.password, 10);
+
     const user = await this.userModel.create({
+      name: dto.name,
+      username: dto.username,
       email: dto.email,
+      phone: dto.phone,
       password: hashed,
       tenantId: targetTenantId,
-      roleId: dto.roleId,
+      b2c_role_id: dto.b2cRoleId,
+      attributes: dto.attributes ?? {},
+      status: true,
     } as any);
 
-    return { id: user.id, email: user.email, tenantId: user.tenantId };
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      username: user.username,
+      tenantId: user.tenantId,
+      b2cRoleId: user.b2cRoleId,
+      status: user.status,
+    };
   }
 
-  // ── Get Users ───────────────────────────────────────────────────────────
-  async getUsers(requestingUser: any, query?: { tenantId?: string }) {
+  // ── Get Users (paginated + filtered) ────────────────────────────────────
+  async getUsers(
+    requestingUser: any,
+    query?: {
+      page?: number;
+      limit?: number;
+      tenantId?: number;
+      name?: string;
+      email?: string;
+      phone?: string;
+      status?: any;
+      startDate?: string;
+      endDate?: string;
+    },
+  ) {
+    const page = Math.max(Number(query?.page) || 1, 1);
+    const limit = Math.min(Number(query?.limit) || 10, 100);
+    const offset = (page - 1) * limit;
+
     const where: any = {};
 
+    // Tenant scoping
     if (requestingUser.tenantId) {
-      // Tenant Admin — always scoped, ignore any query params
-      where.tenantId = requestingUser.tenantId;
+      where.tenant_id = requestingUser.tenantId;
     } else if (query?.tenantId) {
-      // LMC Admin — optional filter by tenantId
-      where.tenantId = query.tenantId;
+      where.tenant_id = query.tenantId;
     }
-    // LMC Admin with no filter → all users across all tenants
 
-    return this.userModel.findAll({
+    // Filters
+    if (query?.name) {
+      where.name = { [Op.iLike]: `%${query.name.trim()}%` };
+    }
+    if (query?.email) {
+      where.email = { [Op.iLike]: `%${query.email.trim()}%` };
+    }
+    if (query?.phone) {
+      where.phone = { [Op.iLike]: `%${query.phone.trim()}%` };
+    }
+
+    // Status filter
+    const statusMap: Record<string, boolean> = {
+      true: true,
+      '1': true,
+      false: false,
+      '0': false,
+    };
+    if (query?.status !== undefined && String(query.status) in statusMap) {
+      where.status = statusMap[String(query.status)];
+    }
+
+    // Date range
+    if (query?.startDate || query?.endDate) {
+      where.createdAt = {};
+      if (query.startDate) {
+        const start = new Date(query.startDate);
+        if (!isNaN(start.getTime())) where.createdAt[Op.gte] = start;
+      }
+      if (query.endDate) {
+        const end = new Date(query.endDate);
+        if (!isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999);
+          where.createdAt[Op.lte] = end;
+        }
+      }
+    }
+
+    const { count, rows } = await this.userModel.findAndCountAll({
       where,
-      attributes: ['id', 'email', 'tenantId', 'status'],
-      include: [{ model: RoleB2C, attributes: ['id', 'name'] }],
+      attributes: [
+        'id',
+        'name',
+        'username',
+        'email',
+        'phone',
+        'status',
+        'tenant_id',
+        'b2c_role_id',
+        'attributes',
+        'createdAt',
+      ],
+      include: [
+        {
+          model: RoleB2C,
+          attributes: ['id', 'name'],
+          foreignKey: 'b2c_role_id',
+        },
+      ],
       order: [['createdAt', 'DESC']],
+      limit,
+      offset,
+      distinct: true,
     });
+
+    const totalPages = Math.ceil(count / limit);
+
+    return {
+      data: rows.map((r) => r.toJSON()),
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   }
 
   // ── Update User ─────────────────────────────────────────────────────────
   async updateUser(
     requestingUser: any,
     userId: string,
-    dto: { roleId?: string; status?: boolean },
+    dto: {
+      b2cRoleId?: number;
+      status?: boolean;
+      name?: string;
+      username?: string;
+      phone?: string;
+      attributes?: Record<string, any>;
+    },
   ) {
     const user = await this.userModel.findByPk(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    this.assertTenantAccess(requestingUser, user.tenantId as any);
+    this.assertTenantAccess(requestingUser, user.tenantId);
 
-    // Validate new role if being changed
-    if (dto.roleId) {
-      const role = await this.roleB2CModel.findByPk(dto.roleId);
+    if (dto.b2cRoleId) {
+      const role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
       if (!role) throw new NotFoundException('Role not found');
     }
 
-    await user.update(dto);
-    return { id: user.id, email: user.email, status: user.status };
+    await user.update({
+      name: dto.name,
+      username: dto.username,
+      phone: dto.phone,
+      b2c_role_id: dto.b2cRoleId,
+      status: dto.status,
+      attributes: dto.attributes,
+    });
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      status: user.status,
+      b2c_role_id: user.b2cRoleId,
+    };
+  }
+
+  // ── Toggle Status ───────────────────────────────────────────────────────
+  async toggleStatus(requestingUser: any, userId: string) {
+    const user = await this.userModel.findByPk(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    this.assertTenantAccess(requestingUser, user.tenantId);
+
+    if (user.id === requestingUser.userId) {
+      throw new ForbiddenException('You cannot deactivate your own account');
+    }
+
+    const newStatus = !user.status;
+    await user.update({ status: newStatus });
+
+    return {
+      id: user.id,
+      status: newStatus,
+      message: newStatus ? 'User activated' : 'User deactivated',
+    };
   }
 
   // ── Delete User ─────────────────────────────────────────────────────────
@@ -108,9 +248,8 @@ export class UsersService {
     const user = await this.userModel.findByPk(userId);
     if (!user) throw new NotFoundException('User not found');
 
-    this.assertTenantAccess(requestingUser, user.tenantId as any);
+    this.assertTenantAccess(requestingUser, user.tenantId);
 
-    // Prevent self-deletion
     if (user.id === requestingUser.userId) {
       throw new ForbiddenException('You cannot delete your own account');
     }
@@ -119,47 +258,14 @@ export class UsersService {
     return { message: 'User deleted successfully' };
   }
 
-  // ── Private: block cross-tenant access ─────────────────────────────────
-  private assertTenantAccess(requestingUser: any, targetTenantId: string) {
+  // ── Private ─────────────────────────────────────────────────────────────
+  private assertTenantAccess(requestingUser: any, targetTenantId: any) {
     if (
-      requestingUser.tenantId && // is a Tenant Admin
-      requestingUser.tenantId !== targetTenantId // targeting another tenant
+      requestingUser.tenantId &&
+      Number(requestingUser.tenantId) !== Number(targetTenantId)
     ) {
       throw new ForbiddenException('Cannot access users outside your tenant');
     }
   }
-  // Use less method
-  async getUserPermissions(userId: number): Promise<any> {
-    const userRoles = await this.userRoleModel.findAll({
-      where: { userId },
-      attributes: ['userId', 'roleId'],
-      include: [
-        {
-          model: Role,
-          attributes: ['id', 'role_title', 'slug'],
-          required: false, // Allow roles without permissions (prevents undefined)
-          include: [
-            {
-              model: Permission,
-              through: { attributes: [] }, // No junction fields
-              attributes: ['permission_name'],
-              required: false, // Allow roles without permissions
-            },
-          ],
-        },
-      ],
-      raw: true,
-      nest: true,
-    });
-
-    const allPermissions = userRoles
-      .flatMap((ur: any) => {
-        return ur.role.permissions.permission_name; // Filter out undefined names
-      })
-      .filter(Boolean);
-
-    const uniquePermissions = [...new Set(allPermissions)];
-
-    return uniquePermissions;
-  }
+  async getUserPermissions(userId: number): Promise<any> {}
 }

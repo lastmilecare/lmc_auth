@@ -81,7 +81,29 @@ export class RolesController {
       return sendError(res, 500, 'internal_server_error');
     }
   }
+  @Get('combo')
+  @RequirePermissions('read:role')
+  async getAllRolesCombo(@Req() req: any, @Res() res: any) {
+    try {
+      const user = req.user;
 
+      let tenantId = null;
+
+      if (user.role === 'LMC_ADMIN') {
+        // Admin can optionally pass tenantId
+        tenantId = req.query.tenantId || null;
+      } else {
+        // Tenant user → force tenantId
+        tenantId = user.tenantId;
+      }
+
+      const roles = await this.rolesService.getAllRoleCombo(tenantId);
+
+      return sendSuccess(res, 200, roles, 'Roles fetched successfully');
+    } catch (error: any) {
+      return sendError(res, 500, error.message);
+    }
+  }
   // ── Get Single Role ─────────────────────────────────────────────────────
   @Get(':id')
   @RequirePermissions('read:role')

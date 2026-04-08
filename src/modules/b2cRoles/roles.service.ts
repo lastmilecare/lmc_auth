@@ -56,7 +56,7 @@ export class RolesService {
       await this.rpModel.bulkCreate(
         dto.permissionIds.map((pid) => ({
           roleId: role.id,
-          permissionId: Number(pid), 
+          permissionId: Number(pid),
         })),
       );
     }
@@ -329,30 +329,6 @@ export class RolesService {
     return { message: 'Permission removed successfully' };
   }
 
-  // ── Sync Permissions (replace all at once) ──────────────────────────────
-  // Frontend sends the full checked list — we diff and update
-  //   async syncPermissions(roleId: string, permissionIds: string[]) {
-  //     const role = await this.roleModel.findByPk(roleId);
-  //     if (!role) throw new NotFoundException('Role not found');
-
-  //     return await this.sequelize.transaction(async (t) => {
-  //       // Remove all existing
-  //         await this.rpModel.destroy({
-  //         where:       { roleId },
-  //         transaction: t,
-  //       });
-
-  //       // Re-assign new set
-  //       if (permissionIds.length) {
-  //         await this.rpModel.bulkCreate(
-  //           permissionIds.map((permissionId) => ({ roleId, permissionId })),
-  //           { transaction: t, ignoreDuplicates: true },
-  //         );
-  //       }
-
-  //       return { message: 'Permissions synced successfully' };
-  //     });
-  //   }
   async syncPermissions(roleId: string, permissionIds: string[]) {
     const roleIdNum = Number(roleId);
     const permissionIdsNum = permissionIds.map(Number);
@@ -385,5 +361,21 @@ export class RolesService {
 
       return { message: 'Permissions synced successfully' };
     });
+  }
+
+  async getAllRoleCombo(tenantId: string | null) {
+    const where: any = {};
+
+    if (tenantId) {
+      where.tenantId = Number(tenantId);
+    }
+
+    const roles = await this.roleModel.findAll({
+      where,
+      attributes: ['id', 'name','tenantId'],
+      order: [['name', 'ASC']],
+    });
+
+    return roles;
   }
 }
