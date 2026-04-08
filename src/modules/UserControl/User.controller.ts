@@ -39,6 +39,7 @@ export class UsersController {
       roleId: string;
       tenantId?: string;
     },
+    
   ) {
     const result = await this.usersService.createUser(req.user, body);
     return sendSuccess(res, 201, result, 'User created successfully');

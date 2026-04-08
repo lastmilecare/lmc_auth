@@ -123,6 +123,23 @@ export class PermissionsController {
     }
   }
 
+  @Get('combo')
+  @RequirePermissions('read:permission')
+  async getAllPermissionsCombo(@Req() req: any, @Res() res: any) {
+    try {
+      const permissions =
+        await this.permissionsService.getAllPermissionsCombo();
+      return sendSuccess(
+        res,
+        200,
+        permissions,
+        'Permissions fetched successfully',
+      );
+    } catch (error: any) {
+      return sendError(res, 500, error.message);
+    }
+  }
+
   // ── Get Single Permission ───────────────────────────────────────────────
   @Get(':id')
   @RequirePermissions('read:permission')
@@ -211,7 +228,7 @@ export class PermissionsController {
       if (error.status === 404) {
         return sendError(res, 404, 'permission_not_found');
       }
-      return sendError(res, 500,  error.message);
+      return sendError(res, 500, error.message);
     }
   }
 }

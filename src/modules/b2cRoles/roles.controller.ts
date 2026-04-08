@@ -39,6 +39,7 @@ export class RolesController {
         name: req.body.name,
         tenantId: req.body.tenantId,
         description: req.body.description,
+        permissionIds: req.body.permissionIds,
       });
 
       await createUserLogs({

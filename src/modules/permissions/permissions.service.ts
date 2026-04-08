@@ -201,4 +201,17 @@ export class PermissionsService {
 
     return { message: 'Permission deleted successfully' };
   }
+  async getAllPermissionsCombo() {
+    const { count, rows } = await this.permModel.findAndCountAll({
+      attributes: ['id', 'action', 'resource', 'description'],
+      order: [
+        ['resource', 'ASC'],
+        ['action', 'ASC'],
+      ],
+    });
+    return {
+      total: count,
+      data: rows,
+    };
+  }
 }

@@ -29,15 +29,14 @@ export class RolesService {
     name: string;
     tenantId: string;
     description?: string;
+    permissionIds?: string[];
   }) {
     const name = dto.name?.trim();
     if (!name) throw new ConflictException('Role name is required');
 
-    // Verify tenant exists
     const tenant = await this.tenantModel.findByPk(dto.tenantId);
     if (!tenant) throw new NotFoundException('Tenant not found');
 
-    // Role name must be unique within the same tenant
     const exists = await this.roleModel.findOne({
       where: { name, tenantId: dto.tenantId },
     });
@@ -52,6 +51,15 @@ export class RolesService {
       tenantId: dto.tenantId,
       description: dto.description ?? null,
     } as any);
+
+    if (dto.permissionIds?.length) {
+      await this.rpModel.bulkCreate(
+        dto.permissionIds.map((pid) => ({
+          roleId: role.id,
+          permissionId: Number(pid), 
+        })),
+      );
+    }
 
     return role;
   }
@@ -329,7 +337,7 @@ export class RolesService {
 
   //     return await this.sequelize.transaction(async (t) => {
   //       // Remove all existing
-  //       await this.rpModel.destroy({
+  //         await this.rpModel.destroy({
   //         where:       { roleId },
   //         transaction: t,
   //       });
