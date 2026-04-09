@@ -93,6 +93,7 @@ export class UsersService {
     const offset = (page - 1) * limit;
 
     const where: any = {};
+    where.tenant_id = { [Op.not]: null };
 
     // Tenant scoping
     if (requestingUser.tenantId) {

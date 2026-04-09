@@ -2,7 +2,11 @@ import { Controller, Post, Body, Req, Res } from '@nestjs/common';
 import slugify from 'slugify';
 const { sendSuccess, sendError } = require('../../../src/util/responseHandler');
 import { AuthService } from './picasoid-auth.service';
-import { checkUserPass, createUserLogs,checkUserPassB2C } from 'src/common/helpers/auth.helper';
+import {
+  checkUserPass,
+  createUserLogs,
+  checkUserPassB2C,
+} from 'src/common/helpers/auth.helper';
 
 @Controller('b2c/auth')
 export class AuthController {
@@ -31,11 +35,22 @@ export class AuthController {
       }
 
       // Role-based access — using role name instead of slug now
-      const allowedRoles = ['LMC_ADMIN', 'TENANT_ADMIN'];
-      if (!allowedRoles.includes(result.role)) {
-        return sendError(res, 401, 'Invalid_role', 'Invalid Role');
-      }
+      // const allowedRoles = ['LMC_ADMIN', 'TENANT_ADMIN'];
+      // if (!allowedRoles.includes(result.role)) {
+      //   return sendError(res, 401, 'Invalid_role', 'Invalid Role');
+      // }
 
+      if (!result?.role) {
+        return sendError(res, 401, 'Invalid_role', 'Role not assigned');
+      }
+      if (result.role !== 'LMC_ADMIN' && !result.tenantId) {
+        return sendError(
+          res,
+          403,
+          'Invalid_access',
+          'Tenant user must have tenantId',
+        );
+      }
       // checkUserPass handles bcrypt compare + JWT signing
       const tokenData = await checkUserPassB2C(req.body.password, result, res);
 
