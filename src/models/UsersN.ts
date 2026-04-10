@@ -53,16 +53,16 @@ export class UserN extends Model {
   declare attributes: Record<string, any>;
 
   @BelongsTo(() => Role, { foreignKey: 'role_id', as: 'role' })
-  role: Role;
+  declare role: Role;
 
   @BelongsTo(() => Permission, {
     foreignKey: 'permission_id',
     as: 'permission',
   })
-  permission: Permission;
+  declare permission: Permission;
 
   @HasMany(() => Cetuser, { foreignKey: 'user_id', as: 'Cetusers' })
-  Cetusers: Cetuser[];
+  declare Cetusers: Cetuser[];
 
   @BelongsToMany(() => CETMANAGEMENT, {
     through: () => Cetuser,
@@ -70,7 +70,7 @@ export class UserN extends Model {
     otherKey: 'cet_id',
     as: 'CETManagements',
   })
-  CETManagements: CETMANAGEMENT[];
+  declare CETManagements: CETMANAGEMENT[];
 
   @ForeignKey(() => Tenant)
   @Column({ type: DataType.INTEGER, allowNull: true, field: 'tenant_id' })

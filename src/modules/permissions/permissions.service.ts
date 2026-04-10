@@ -8,7 +8,7 @@ import { PermissionB2C as Permission } from '../../models/permission_b2c.model';
 import { RolePermissionB2C as RolePermission } from '../../models/role_permission_b2c.model';
 import { RoleB2C as Role } from '../../models/role_b2c.model';
 import { Sequelize } from 'sequelize-typescript';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 
 @Injectable()
 export class PermissionsService {
@@ -212,6 +212,22 @@ export class PermissionsService {
     return {
       total: count,
       data: rows,
+    };
+  }
+  async getResourceCombo() {
+    const resources = await this.sequelize.query(
+      `SELECT id, name
+     FROM "resources"
+     WHERE status = true
+     ORDER BY name ASC`,
+      {
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    return {
+      total: resources.length,
+      data: resources,
     };
   }
 }

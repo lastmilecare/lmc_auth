@@ -7,11 +7,11 @@ import { Permission } from './Permissions';  // Assuming you have a Permission m
 })
 export class Role extends Model {
   @Column
-  role_title: string;
+  declare role_title: string;
 
   @Column
-  slug: string;
+  declare slug: string;
 
   @HasMany(() => Permission, { foreignKey: 'role_id', as: 'permissions' })
-  permissions: Permission[];
+  declare permissions: Permission[];
 }

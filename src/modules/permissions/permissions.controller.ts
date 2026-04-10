@@ -139,6 +139,15 @@ export class PermissionsController {
       return sendError(res, 500, error.message);
     }
   }
+  @Get('resource-combo')
+  async getResourceCombo(@Req() req: any, @Res() res: any) {
+    try {
+      const resources = await this.permissionsService.getResourceCombo();
+      return sendSuccess(res, 200, resources, 'Resources fetched successfully');
+    } catch (error: any) {
+      return sendError(res, 500, error.message);
+    }
+  }
 
   // ── Get Single Permission ───────────────────────────────────────────────
   @Get(':id')

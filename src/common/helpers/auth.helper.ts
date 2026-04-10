@@ -55,7 +55,7 @@ export const checkUserPass = async (
 
   return {
     token,
-    role: userdata.role,
+    role: userdata.role || userdata.slug,
     username: userdata.username,
     isAdmin: userdata.isAdmin,
     permission: userdata.permission || null,
