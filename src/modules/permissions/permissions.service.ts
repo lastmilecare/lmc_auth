@@ -216,7 +216,7 @@ export class PermissionsService {
   }
   async getResourceCombo() {
     const resources = await this.sequelize.query(
-      `SELECT id, name
+      `SELECT id, name, description
      FROM "resources"
      WHERE status = true
      ORDER BY name ASC`,
