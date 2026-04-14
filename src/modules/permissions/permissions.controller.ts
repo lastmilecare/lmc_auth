@@ -240,4 +240,34 @@ export class PermissionsController {
       return sendError(res, 500, error.message);
     }
   }
+  @Post('resource')
+@RequirePermissions('create:permission') 
+async createResource(@Req() req: any, @Res() res: any) {
+  try {
+    if (!req.body.name) {
+      return sendError(res, 400, 'Name is required');
+    }
+
+    if (!req.body.description) {
+      return sendError(res, 400, 'Description is required');
+    }
+
+    const resource = await this.permissionsService.createResource({
+      name: req.body.name,
+      description: req.body.description,
+    });
+
+    return sendSuccess(
+      res,
+      201,
+      resource,
+      'Resource created successfully',
+    );
+  } catch (error: any) {
+    if (error.status === 409) {
+      return sendError(res, 409, 'resource_exists');
+    }
+    return sendError(res, 500, 'internal_server_error');
+  }
+}
 }
