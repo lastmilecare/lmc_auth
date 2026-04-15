@@ -18,6 +18,7 @@ type TokenResponse = {
     token?: string;
     role?: any;
     username?: any;
+    center_name?: any;
     isAdmin?: any;
     permission?: any;
     user_id?: any;
