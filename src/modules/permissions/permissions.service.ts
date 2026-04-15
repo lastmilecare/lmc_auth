@@ -9,6 +9,7 @@ import { RolePermissionB2C as RolePermission } from '../../models/role_permissio
 import { RoleB2C as Role } from '../../models/role_b2c.model';
 import { Sequelize } from 'sequelize-typescript';
 import { Op, QueryTypes } from 'sequelize';
+import { Resource } from 'src/models/resource.model';
 import { loadPermissionsMap } from 'src/const/permissions.map';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class PermissionsService {
     @InjectModel(Permission) private permModel: typeof Permission,
     @InjectModel(RolePermission) private rpModel: typeof RolePermission,
     @InjectModel(Role) private roleModel: typeof Role,
+    @InjectModel(Resource) private resourceModel: typeof Resource,
   ) {}
 
   // ── Create Permission (LMC Admin only) ──────────────────────────────────
@@ -232,4 +234,20 @@ export class PermissionsService {
       data: resources,
     };
   }
+  async createResource(dto: { name: string; description: string }) {
+  const name = dto.name.toLowerCase().trim();
+  const exists = await this.resourceModel.findOne({
+    where: { name },
+  });
+  if (exists) {
+    throw new ConflictException(`Resource '${name}' already exists`);
+}
+  const resource = await this.resourceModel.create({
+    name,
+    description: dto.description?.trim(),
+    status: true,
+  } as any);
+
+  return resource;
+}
 }
