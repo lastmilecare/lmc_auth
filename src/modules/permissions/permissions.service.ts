@@ -9,6 +9,7 @@ import { RolePermissionB2C as RolePermission } from '../../models/role_permissio
 import { RoleB2C as Role } from '../../models/role_b2c.model';
 import { Sequelize } from 'sequelize-typescript';
 import { Op, QueryTypes } from 'sequelize';
+import { loadPermissionsMap } from 'src/const/permissions.map';
 
 @Injectable()
 export class PermissionsService {
@@ -42,7 +43,7 @@ export class PermissionsService {
       resource: dto.resource,
       description: dto.description ?? null,
     } as any);
-
+    await loadPermissionsMap(Permission);
     return permission;
   }
 
@@ -198,6 +199,7 @@ export class PermissionsService {
     // Remove all role assignments first
     await this.rpModel.destroy({ where: { permissionId: id } });
     await permission.destroy();
+    await loadPermissionsMap(Permission);
 
     return { message: 'Permission deleted successfully' };
   }

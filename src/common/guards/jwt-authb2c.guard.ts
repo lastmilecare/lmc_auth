@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-
+import { getPermissionsMap } from 'src/const/permissions.map';
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
@@ -31,11 +31,13 @@ export class JwtAuthGuard implements CanActivate {
         email:       decoded.data.email,
         tenantId:    decoded.data.tenantId,    // null = LMC Admin
         role:        decoded.data.role,
-        permissions: decoded.data.permissions, // ['create:user', 'read:role', ...]
+          permissions: (decoded.data.p || [])
+    .map((id: number) => getPermissionsMap()[id])
+    .filter(Boolean),  // ['create:user', 'read:role', ...]
       };
 
       return true;
-    } catch (error) {
+    } catch (error:any) {
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Token has expired');
       }

@@ -174,7 +174,7 @@ export const checkUserPassCet = async (
       return { status: 'no_cet_id_found' };
     }
     const cet_id = cetUser?.cet_id || corUser?.dataValues?.corporate_id;
-   
+
     const token = jwt.sign(
       {
         data: {
@@ -312,7 +312,7 @@ export const checkUserPassB2C = async (
         email: userdata.email,
         tenantId: userdata.tenantId,
         role: userdata.role,
-        permissions: userdata.permissions,
+        p: userdata.permissionIds,
       },
     },
     configJwttoken,

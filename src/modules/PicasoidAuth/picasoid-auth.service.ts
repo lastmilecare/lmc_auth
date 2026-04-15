@@ -43,6 +43,8 @@ export class AuthService {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
+    const permissionIds = user.roleb2c.permissions.map((p: Permission) => p.id);
+
     // Build "action:resource" permission strings for JWT
     const permissions = user.roleb2c.permissions.map(
       (p: Permission) => `${p.action}:${p.resource}`,
@@ -58,6 +60,7 @@ export class AuthService {
       name: user.name,
       username: user.username,
       isAdmin: user.isAdmin,
+      permissionIds
     };
   }
 }
