@@ -28,6 +28,7 @@ type TokenResponse = {
   name?: any;
   permissions?: any;
   tenantId?: any;
+  tenantType?: any;
 };
 
 export const checkUserPass = async (
@@ -341,5 +342,6 @@ export const checkUserPassB2C = async (
     email: userdata.email || null,
     name: userdata.name || null,
     tenantId: userdata.tenantId || null,
+    tenantType: userdata.tenantType || null,
   };
 };

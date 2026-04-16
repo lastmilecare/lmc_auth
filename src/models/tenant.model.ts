@@ -31,4 +31,7 @@ export class Tenant extends Model<Tenant> {
 
   @HasMany(() => RoleB2C)
   declare roles: RoleB2C[];
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  declare tenant_type: string;
 }

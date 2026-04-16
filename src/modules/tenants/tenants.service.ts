@@ -21,11 +21,16 @@ export class TenantsService {
     @InjectModel(RolePermissionB2C) private rpModel: typeof RolePermissionB2C,
   ) {}
 
-  async createTenant(dto: { name: string }) {
+  async createTenant(dto: { name: string, tenant_type: string }) {
     const name = dto.name?.trim();
+    const tenant_type = dto.tenant_type?.trim();
 
     if (!name) {
       throw new ConflictException('Tenant name is required');
+    }
+
+    if (!tenant_type) {
+      throw new ConflictException('Tenant type is required');
     }
 
     const exists = await this.tenantModel.findOne({ where: { name } });
@@ -33,7 +38,7 @@ export class TenantsService {
 
     return await this.sequelize.transaction(async (t) => {
       const tenant = await this.tenantModel.create(
-        { name },
+        { name, tenant_type },
         { transaction: t },
       );
 

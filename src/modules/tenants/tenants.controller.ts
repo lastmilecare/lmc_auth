@@ -28,12 +28,16 @@ export class TenantsController {
   @RequirePermissions('create:tenant')
   async createTenant(@Req() req: any, @Res() res: any) {
     try {
-      if (!req.body.name) {
+      if (!req.body.name.trim()) {
         return sendError(res, 400, 'name_required');
+      }
+       if (!req.body.tenant_type.trim()) {
+        return sendError(res, 400, 'tenant_type_required');
       }
 
       const result = await this.tenantsService.createTenant({
         name: req.body.name.trim(),
+        tenant_type: req.body.tenant_type.trim(),
       });
 
       await createUserLogs({

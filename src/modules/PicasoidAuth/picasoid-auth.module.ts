@@ -10,7 +10,7 @@ import { RoleB2C } from 'src/models/role_b2c.model';
 import { PermissionB2C } from 'src/models/permission_b2c.model';
 import { RolePermissionB2C } from 'src/models/role_permission_b2c.model';
 import { SequelizeModule } from '@nestjs/sequelize';
-
+import { Tenant } from 'src/models/tenant.model';
 @Module({
   imports: [
     ConfigModule,
@@ -21,6 +21,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
       RoleB2C,
       PermissionB2C,
       RolePermissionB2C,
+      Tenant,
     ]),
 
     JwtModule.registerAsync({

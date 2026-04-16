@@ -5,11 +5,12 @@ import { PermissionB2C as Permission } from 'src/models/permission_b2c.model';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/sequelize';
 import * as bcrypt from 'bcrypt';
-
+import { Tenant } from 'src/models/tenant.model';
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User) private userModel: typeof User,
+    @InjectModel(Tenant) private tenantModel: typeof Tenant,
     private jwtService: JwtService,
   ) {}
 
@@ -49,7 +50,11 @@ export class AuthService {
     const permissions = user.roleb2c.permissions.map(
       (p: Permission) => `${p.action}:${p.resource}`,
     );
-
+    let tenantType = null;
+    if (user?.tenantId) {
+      const tenant = await this.tenantModel.findByPk(user.tenantId);
+      tenantType = tenant ? tenant.tenant_type : null;
+    }
     return {
       id: user.id,
       email: user.email,
@@ -60,7 +65,8 @@ export class AuthService {
       name: user.name,
       username: user.username,
       isAdmin: user.isAdmin,
-      permissionIds
+      permissionIds,
+      tenantType,
     };
   }
 }
