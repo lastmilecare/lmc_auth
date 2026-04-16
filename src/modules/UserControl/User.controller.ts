@@ -26,7 +26,7 @@ export class UsersController {
 
   // ── Create User ─────────────────────────────────────────────────────────
   @Post()
-  @RequirePermissions('create:user')
+  @RequirePermissions('create:staff_form')
   async createUser(@Res() res: any, @Req() req: any, @Body() body: any) {
     try {
       if (!body.email) {
@@ -69,7 +69,7 @@ export class UsersController {
 
   // ── Get Users ───────────────────────────────────────────────────────────
   @Get()
-  @RequirePermissions('read:user')
+  @RequirePermissions('read:staff_list')
   async getUsers(@Res() res: any, @Req() req: any, @Query() query: any) {
     try {
       const result = await this.usersService.getUsers(req.user, {
@@ -91,7 +91,7 @@ export class UsersController {
 
   // ── Update User ─────────────────────────────────────────────────────────
   @Patch(':id')
-  @RequirePermissions('update:user')
+  @RequirePermissions('update:staff_list')
   async updateUser(
     @Res() res: any,
     @Req() req: any,
@@ -131,7 +131,7 @@ export class UsersController {
 
   // ── Toggle Status ───────────────────────────────────────────────────────
   @Patch(':id/toggle-status')
-  @RequirePermissions('update:user')
+  @RequirePermissions('update:staff_list')
   async toggleStatus(
     @Res() res: any,
     @Req() req: any,
@@ -162,7 +162,7 @@ export class UsersController {
 
   // ── Delete User ─────────────────────────────────────────────────────────
   @Delete(':id')
-  @RequirePermissions('delete:user')
+  @RequirePermissions('delete:staff_list')
   async deleteUser(@Res() res: any, @Req() req: any, @Param('id') id: string) {
     try {
       const result = await this.usersService.deleteUser(req.user, id);
