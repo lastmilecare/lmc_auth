@@ -13,6 +13,7 @@ import {
 } from "src/common/helpers/auth.helper";
 import { Permission } from 'src/models/Permissions';
 import { Permissionmetadata } from 'src/models/PermissionsMetaData';
+import { Center } from 'src/models/center.model';
 import * as jwt from 'jsonwebtoken';
 import {
   JWT_ADMIN as configJwttoken,
@@ -111,6 +112,7 @@ export class CenterAuthController {
           username: mockUser.username,
           isAdmin: mockUser.isAdmin,
           permission: mockUser.permission || null,
+          center_name: null,
           isTestAccount: true
         };
 
@@ -143,6 +145,27 @@ export class CenterAuthController {
         sendError(res, 404, "no_user_found or invalid_password", 'Invalid Password');
         return;
       }
+
+      const centerUserData = await Centeruser.findOne({
+        where: { user_id: result.id },
+        attributes: ['center_id'],
+        raw: true,
+        nest: true,
+      });
+
+      const centerData = centerUserData?.center_id
+        ? await Center.findOne({
+          where: { id: centerUserData.center_id },
+          attributes: ['id', 'project_name'],
+          raw: true,
+          nest: true,
+        })
+        : null;
+
+      const responseData = {
+        ...tokenData,
+        center_name: centerData?.project_name || null,
+      };
       const logData = {
         user_id: result.id,
         action_type: "center_login",
