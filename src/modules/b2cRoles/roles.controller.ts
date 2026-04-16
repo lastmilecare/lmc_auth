@@ -16,7 +16,6 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { sendSuccess, sendError } from '../../../src/util/responseHandler';
 import { createUserLogs } from 'src/common/helpers/auth.helper';
-import { error } from 'console';
 
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('b2c/roles')
