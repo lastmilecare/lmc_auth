@@ -160,7 +160,7 @@ export class UsersController {
     }
   }
 
-  // ── Delete User ─────────────────────────────────────────────────────────
+  // ── Delete User ──────────────────────────────────────────────────────
   @Delete(':id')
   @RequirePermissions('delete:staff_list')
   async deleteUser(@Res() res: any, @Req() req: any, @Param('id') id: string) {
