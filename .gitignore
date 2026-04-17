@@ -399,4 +399,5 @@ dist
 .webpack
 .serverless/**/*.zip
 package-lock.jsonpackage-lock.json
+yarn.lockpackage-lock.json
 yarn.lock
