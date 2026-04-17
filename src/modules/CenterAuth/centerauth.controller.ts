@@ -164,6 +164,8 @@ export class CenterAuthController {
 
       const responseData = {
         ...tokenData,
+        center_id: centerUserData?.center_id || null,
+        project_name: centerData?.project_name || null,
         center_name: centerData?.project_name || null,
       };
       const logData = {
@@ -174,7 +176,7 @@ export class CenterAuthController {
         action_time: new Date().toISOString(),
       }
       await createUserLogs(logData);
-      sendSuccess(res, 200, tokenData, 'Login Successfully');
+      sendSuccess(res, 200, responseData, 'Login Successfully');
       return;
     } catch (error) {
       sendError(res, 500, "internal server error", error.message || error);
