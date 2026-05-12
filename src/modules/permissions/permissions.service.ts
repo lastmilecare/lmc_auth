@@ -235,19 +235,135 @@ export class PermissionsService {
     };
   }
   async createResource(dto: { name: string; description: string }) {
-  const name = dto.name.toLowerCase().trim();
-  const exists = await this.resourceModel.findOne({
-    where: { name },
-  });
-  if (exists) {
-    throw new ConflictException(`Resource '${name}' already exists`);
-}
-  const resource = await this.resourceModel.create({
-    name,
-    description: dto.description?.trim(),
-    status: true,
-  } as any);
+    const name = dto.name.toLowerCase().trim();
+    const exists = await this.resourceModel.findOne({
+      where: { name },
+    });
+    if (exists) {
+      throw new ConflictException(`Resource '${name}' already exists`);
+    }
+    const resource = await this.resourceModel.create({
+      name,
+      description: dto.description?.trim(),
+      status: true,
+    } as any);
 
-  return resource;
-}
+    return resource;
+  }
+  // service
+
+  async fetchResource(filters: any) {
+    const {
+      page = 1,
+      limit = 10,
+      name,
+      description,
+      startDate,
+      endDate,
+    } = filters;
+
+    const pageNumber = Number(page);
+    const pageSize = Number(limit);
+
+    const offset = (pageNumber - 1) * pageSize;
+
+    const where: any = {};
+
+    // name filter
+    if (name) {
+      where.name = {
+        [Op.iLike]: `%${name}%`,
+      };
+    }
+
+    // description filter
+    if (description) {
+      where.description = {
+        [Op.iLike]: `%${description}%`,
+      };
+    }
+
+    // date parsing
+    const parseDate = (val: string): Date | null => {
+      if (!val) return null;
+
+      const parsed = new Date(val);
+
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const from = parseDate(startDate);
+    const to = parseDate(endDate);
+
+    // created_at filter
+    if (from && to) {
+      const start = new Date(from);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+
+      where.created_at = {
+        [Op.between]: [start, end],
+      };
+    } else if (from && !to) {
+      const start = new Date(from);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(from);
+      end.setHours(23, 59, 59, 999);
+
+      where.created_at = {
+        [Op.between]: [start, end],
+      };
+    } else if (!from && to) {
+      const start = new Date(to);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+
+      where.created_at = {
+        [Op.between]: [start, end],
+      };
+    }
+
+    const { rows, count } = await this.resourceModel.findAndCountAll({
+      where,
+      limit: pageSize,
+      offset,
+      order: [['created_at', 'DESC']],
+    });
+
+    const totalPages = Math.ceil(count / pageSize);
+
+    return {
+      data: rows.map((r) => r.toJSON()),
+      pagination: {
+        total: count,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages,
+        hasNextPage: pageNumber < totalPages,
+        hasPrevPage: pageNumber > 1,
+      },
+    };
+  }
+  // service method to delete resource and all its associated permissions TODO: add transaction
+  async deleteResource(id: string) {
+    // const resource = await this.resourceModel.findByPk(id);
+    // if (!resource) throw new NotFoundException('Resource not found');
+
+    // return await this.sequelize.transaction(async (t) => {
+    //   // Remove all permission assignments first
+    //   await this.resourceModel.destroy({
+    //     where: { id },
+    //     transaction: t,
+    //   });
+
+    //   await resource.destroy({ transaction: t });
+
+    //   return { message: 'Resource deleted successfully' };
+    // });
+  }
 }

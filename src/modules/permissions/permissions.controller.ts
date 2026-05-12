@@ -241,33 +241,70 @@ export class PermissionsController {
     }
   }
   @Post('resource')
-@RequirePermissions('create:permission') 
-async createResource(@Req() req: any, @Res() res: any) {
-  try {
-    if (!req.body.name) {
-      return sendError(res, 400, 'Name is required');
-    }
+  @RequirePermissions('create:permission')
+  async createResource(@Req() req: any, @Res() res: any) {
+    try {
+      if (!req.body.name) {
+        return sendError(res, 400, 'Name is required');
+      }
 
-    if (!req.body.description) {
-      return sendError(res, 400, 'Description is required');
-    }
+      if (!req.body.description) {
+        return sendError(res, 400, 'Description is required');
+      }
 
-    const resource = await this.permissionsService.createResource({
-      name: req.body.name,
-      description: req.body.description,
-    });
+      const resource = await this.permissionsService.createResource({
+        name: req.body.name,
+        description: req.body.description,
+      });
 
-    return sendSuccess(
-      res,
-      201,
-      resource,
-      'Resource created successfully',
-    );
-  } catch (error: any) {
-    if (error.status === 409) {
-      return sendError(res, 409, 'resource_exists');
+      return sendSuccess(res, 201, resource, 'Resource created successfully');
+    } catch (error: any) {
+      if (error.status === 409) {
+        return sendError(res, 409, 'resource_exists');
+      }
+      return sendError(res, 500, 'internal_server_error');
     }
-    return sendError(res, 500, 'internal_server_error');
   }
-}
+
+  @Post('resource/view')
+  @RequirePermissions('read:permission')
+  async fetchResource(@Req() req: any, @Res() res: any) {
+    try {
+      const resource = await this.permissionsService.fetchResource(req.body);
+
+      return sendSuccess(res, 200, resource, 'Resource fetched successfully');
+    } catch (error: any) {
+      return sendError(
+        res,
+        error?.status || 500,
+        error?.message || 'internal_server_error',
+      );
+    }
+  }
+  @Delete('resource/:id')
+  @RequirePermissions('delete:resource')
+  async deleteResource(
+    @Req() req: any,
+    @Res() res: any,
+    @Param('id') id: string,
+  ) {
+    try {
+      const result = await this.permissionsService.deleteResource(id);
+
+      await createUserLogs({
+        user_id: req.user.userId,
+        action_type: 'delete_resource',
+        action_description: `Deleted resource: ${id}`,
+        user_ip: req.userIp,
+        action_time: new Date().toISOString(),
+      });
+
+      return sendSuccess(res, 200, {}, 'Need to delete resource');
+    } catch (error: any) {
+      if (error.status === 404) {
+        return sendError(res, 404, 'resource_not_found');
+      }
+      return sendError(res, 500, 'internal_server_error');
+    }
+  }
 }
