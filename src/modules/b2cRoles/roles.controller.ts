@@ -81,7 +81,7 @@ export class RolesController {
     }
   }
   @Get('combo')
-  @RequirePermissions('read:role')
+  // @RequirePermissions('read:role')
   async getAllRolesCombo(@Req() req: any, @Res() res: any) {
     try {
       const user = req.user;
