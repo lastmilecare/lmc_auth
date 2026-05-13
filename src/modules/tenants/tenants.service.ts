@@ -21,7 +21,7 @@ export class TenantsService {
     @InjectModel(RolePermissionB2C) private rpModel: typeof RolePermissionB2C,
   ) {}
 
-  async createTenant(dto: { name: string, tenant_type: string }) {
+  async createTenant(dto: { name: string; tenant_type: string }) {
     const name = dto.name?.trim();
     const tenant_type = dto.tenant_type?.trim();
 
@@ -41,34 +41,34 @@ export class TenantsService {
         { name, tenant_type },
         { transaction: t },
       );
+      // automatically create an admin role for the tenant with all permissions related to user and role management
+      // const adminRole = await this.roleModel.create(
+      //   {
+      //     name: `${name}_ADMIN`,
+      //     tenantId: tenant.id,
+      //   },
+      //   { transaction: t },
+      // );
 
-      const adminRole = await this.roleModel.create(
-        {
-          name: `${name}_ADMIN`,
-          tenantId: tenant.id,
-        },
-        { transaction: t },
-      );
+      // const perms = await this.permModel.findAll({
+      //   where: {
+      //     resource: {
+      //       [Op.in]: ['user', 'role'],
+      //     },
+      //   },
+      //   transaction: t,
+      // });
 
-      const perms = await this.permModel.findAll({
-        where: {
-          resource: {
-            [Op.in]: ['user', 'role'],
-          },
-        },
-        transaction: t,
-      });
-
-      if (perms.length) {
-        await this.rpModel.bulkCreate(
-          perms.map((p) => ({
-            roleId: adminRole.id,
-            permissionId: p.id,
-          })),
-          { transaction: t, ignoreDuplicates: true },
-        );
-      }
-
+      // if (perms.length) {
+      //   await this.rpModel.bulkCreate(
+      //     perms.map((p) => ({
+      //       roleId: adminRole.id,
+      //       permissionId: p.id,
+      //     })),
+      //     { transaction: t, ignoreDuplicates: true },
+      //   );
+      // }
+      const adminRole = { id: null };
       return { tenant, adminRole };
     });
   }
