@@ -30,6 +30,7 @@ export class UsersService {
       username?: string;
       phone?: string;
       attributes?: Record<string, any>; // jsonb
+      employeeNo?: string; // employee_no
     },
   ) {
     const targetTenantId = requestingUser.tenantId ?? dto.tenantId;
@@ -59,6 +60,7 @@ export class UsersService {
       b2c_role_id: dto.b2cRoleId,
       attributes: dto.attributes ?? {},
       status: true,
+      employee_no: dto.employeeNo,
     } as any);
 
     return {
@@ -70,6 +72,7 @@ export class UsersService {
       tenantId: user.tenantId,
       b2cRoleId: user.b2cRoleId,
       status: user.status,
+      employeeNo: user.employee_no,
     };
   }
 
@@ -153,6 +156,7 @@ export class UsersService {
         'b2c_role_id',
         'attributes',
         'createdAt',
+        'employee_no',
       ],
       include: [
         {
@@ -193,6 +197,7 @@ export class UsersService {
       username?: string;
       phone?: string;
       attributes?: Record<string, any>;
+      employeeNo?: string;
     },
   ) {
     const user = await this.userModel.findByPk(userId);
@@ -212,6 +217,7 @@ export class UsersService {
       b2c_role_id: dto.b2cRoleId,
       status: dto.status,
       attributes: dto.attributes,
+      employee_no: dto.employeeNo,
     });
 
     return {
