@@ -92,4 +92,7 @@ export class UserN extends Model {
 
   @BelongsTo(() => RoleB2C, { as: 'roleb2c' })
   declare roleb2c: RoleB2C;
+
+  @Column
+  declare employee_no: string;
 }
