@@ -39,6 +39,7 @@ export class PermissionsController {
         action: req.body.action.toLowerCase().trim(),
         resource: req.body.resource.toLowerCase().trim(),
         description: req.body.description,
+        req: req, // Pass the request object to the service for user/pass center check
       });
 
       await createUserLogs({

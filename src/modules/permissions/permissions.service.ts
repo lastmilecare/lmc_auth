@@ -23,31 +23,67 @@ export class PermissionsService {
   ) {}
 
   // ── Create Permission (LMC Admin only) ──────────────────────────────────
-  async createPermission(dto: {
-    action: string;
-    resource: string;
-    description?: string;
-  }) {
-    const exists = await this.permModel.findOne({
-      where: {
-        action: dto.action,
-        resource: dto.resource,
-      },
-    });
-    if (exists) {
-      throw new ConflictException(
-        `Permission '${dto.action}:${dto.resource}' already exists`,
-      );
-    }
-
-    const permission = await this.permModel.create({
+ async createPermission(dto: {
+  action: string;
+  resource: string;
+  description?: string;
+  req?: any;
+}) {
+  const exists = await this.permModel.findOne({
+    where: {
       action: dto.action,
       resource: dto.resource,
-      description: dto.description ?? null,
-    } as any);
-    await loadPermissionsMap(Permission);
-    return permission;
+    },
+  });
+
+  if (exists) {
+    throw new ConflictException(
+      `Permission '${dto.action}:${dto.resource}' already exists`,
+    );
   }
+
+  const permission = await this.permModel.create({
+    action: dto.action,
+    resource: dto.resource,
+    description: dto.description ?? null,
+  } as any);
+
+  await loadPermissionsMap(Permission);
+
+  /**
+   * ✅ AUTO ASSIGN LOGIC
+   */
+  const role = dto?.req?.user?.role;
+  const tenantId = dto?.req?.user?.tenantId;
+  const userId = dto?.req?.user?.userId;
+
+  if (role === 'LMC_ADMIN') {
+    const lmcAdminRole = await this.roleModel.findOne({
+      where: {
+        name: 'LMC_ADMIN',
+        ...(tenantId ? { tenantId } : { tenantId: null }),
+      },
+    });
+
+    if (lmcAdminRole) {
+      const alreadyMapped = await this.rpModel.findOne({
+        where: {
+          roleId: lmcAdminRole.id,
+          permissionId: permission.id,
+        },
+      });
+
+      if (!alreadyMapped) {
+        await this.rpModel.create({
+          roleId: lmcAdminRole.id,
+          permissionId: permission.id,
+        } as any);
+      }
+    }
+  }
+
+  return permission;
+}
 
   async getAllPermissions(query?: {
     page?: number;

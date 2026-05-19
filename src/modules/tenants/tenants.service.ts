@@ -10,7 +10,7 @@ import { PermissionB2C } from '../../models/permission_b2c.model';
 import { RolePermissionB2C } from '../../models/role_permission_b2c.model';
 import { InjectConnection, InjectModel } from '@nestjs/sequelize'; // 👈
 import { Sequelize } from 'sequelize-typescript';
-
+import { Center } from 'src/models/center.model';
 @Injectable()
 export class TenantsService {
   constructor(
@@ -19,6 +19,7 @@ export class TenantsService {
     @InjectModel(RoleB2C) private roleModel: typeof RoleB2C,
     @InjectModel(PermissionB2C) private permModel: typeof PermissionB2C,
     @InjectModel(RolePermissionB2C) private rpModel: typeof RolePermissionB2C,
+    @InjectModel(Center) private centerModel: typeof Center,
   ) {}
 
   async createTenant(dto: { name: string; tenant_type: string }) {
@@ -237,5 +238,113 @@ export class TenantsService {
       total: count,
       data: rows,
     };
+  }
+
+  async createCenter(dto: any) {
+    const exists = await this.centerModel.findOne({
+      where: {
+        project_name: dto.project_name.trim(),
+      },
+    });
+
+    if (exists) {
+      throw new ConflictException('Center already exists with same name');
+    }
+
+    return await this.centerModel.create({
+      ...dto,
+    } as any);
+  }
+
+  async getCenters(user: any, filters: any) {
+    const page = Math.max(parseInt(filters.page) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(filters.limit) || 10, 1), 100);
+    const offset = (page - 1) * limit;
+
+    const { name, status, startDate, endDate } = filters;
+
+    const where: any = {};
+
+    if (user.role !== 'LMC_ADMIN') {
+      where.tenant_id = user.tenantId;
+    }
+
+    if (name?.trim()) {
+      where.agency_name = { [Op.iLike]: `%${name.trim()}%` };
+    }
+
+    if (status !== undefined && status !== null && status !== '') {
+      if (status === 'true' || status === true) where.status = true;
+      else if (status === 'false' || status === false) where.status = false;
+    }
+
+    // Date filtering
+    if (startDate || endDate) {
+      const parseDate = (val: string): Date | null => {
+        if (!val || typeof val !== 'string') return null;
+        const parsed = new Date(val);
+        return isNaN(parsed.getTime()) ? null : parsed;
+      };
+
+      const from = parseDate(startDate);
+      const to = parseDate(endDate);
+
+      if (from && to) {
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt = { [Op.between]: [from, end] };
+      } else if (from) {
+        const end = new Date(from);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt  = { [Op.between]: [from, end] };
+      } else if (to) {
+        const start = new Date(to);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt = { [Op.between]: [start, end] };
+      }
+    }
+
+    const { count, rows } = await this.centerModel.findAndCountAll({
+      where,
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
+
+    return {
+      total: count,
+      page: +page,
+      pageSize: +limit,
+      data: rows,
+    };
+  }
+  async getCenterById(id: number) {
+    return await this.centerModel.findByPk(id);
+  }
+
+  async updateCenter(id: number, dto: any) {
+    const center = await this.centerModel.findByPk(id);
+
+    if (!center) {
+      throw new NotFoundException('Center not found');
+    }
+
+    await center.update(dto);
+
+    return center;
+  }
+
+  async deleteCenter(id: number) {
+    const center = await this.centerModel.findByPk(id);
+
+    if (!center) {
+      throw new NotFoundException('Center not found');
+    }
+
+    await center.destroy();
+
+    return true;
   }
 }

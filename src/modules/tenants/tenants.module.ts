@@ -1,12 +1,13 @@
-import { Module }          from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { Tenant }          from '../../models/tenant.model';
-import { RoleB2C }         from '../../models/role_b2c.model';
-import { PermissionB2C }   from '../../models/permission_b2c.model';
+import { Tenant } from '../../models/tenant.model';
+import { RoleB2C } from '../../models/role_b2c.model';
+import { PermissionB2C } from '../../models/permission_b2c.model';
 import { RolePermissionB2C } from '../../models/role_permission_b2c.model';
-import { TenantsService }    from './tenants.service';
+import { TenantsService } from './tenants.service';
 import { TenantsController } from './tenants.controller';
 import { UserN } from 'src/models/UsersN';
+import { Center } from 'src/models/center.model';
 @Module({
   imports: [
     SequelizeModule.forFeature([
@@ -14,11 +15,12 @@ import { UserN } from 'src/models/UsersN';
       RoleB2C,
       PermissionB2C,
       RolePermissionB2C,
-      UserN
+      UserN,
+      Center,
     ]),
   ],
-  providers:   [TenantsService],
+  providers: [TenantsService],
   controllers: [TenantsController],
-  exports:     [TenantsService],
+  exports: [TenantsService],
 })
 export class TenantsModule {}
