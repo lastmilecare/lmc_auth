@@ -19,6 +19,7 @@ import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
 import { sendSuccess, sendError } from '../../../src/util/responseHandler';
 import { createUserLogs } from '../../common/helpers/auth.helper';
+import { get } from 'http';
 
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('b2c/tenants')
@@ -83,30 +84,13 @@ export class TenantsController {
     }
   }
   @Get('/centers')
-  @RequirePermissions('create:center')
+  @RequirePermissions('read:center')
   async getCenters(@Req() req: any, @Res() res: any, @Query() query: any) {
     try {
       const result = await this.tenantsService.getCenters(req?.user, query);
 
       return sendSuccess(res, 200, result, 'Centers fetched successfully');
     } catch (error) {
-      return sendError(res, 500, 'internal_server_error');
-    }
-  }
-  @Get(':id')
-  @RequirePermissions('read:tenant')
-  async findOne(
-    @Req() req: any,
-    @Res() res: any,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    try {
-      const tenant = await this.tenantsService.findOne(id);
-      return sendSuccess(res, 200, tenant, 'Tenant fetched successfully');
-    } catch (error: any) {
-      if (error.status === 404) {
-        return sendError(res, 404, 'tenant_not_found');
-      }
       return sendError(res, 500, 'internal_server_error');
     }
   }
@@ -245,7 +229,7 @@ export class TenantsController {
   }
 
   @Get('/centers/detail/:id')
-  @RequirePermissions('view:center')
+  @RequirePermissions('read:center')
   async getCenterById(@Param('id') id: number, @Res() res: any) {
     try {
       const result = await this.tenantsService.getCenterById(id);
@@ -304,6 +288,42 @@ export class TenantsController {
 
       return sendSuccess(res, 200, {}, 'Center deleted successfully');
     } catch (error) {
+      return sendError(res, 500, 'internal_server_error');
+    }
+  }
+  @Get('/centers/combo')
+  @RequirePermissions('read:center')
+  async centerComboList(@Req() req: any, @Res() res: any) {
+    try {
+      const tenantId = req.user.tenantId;
+      const centers = await this.tenantsService.centerComboList(
+        req.user,
+        tenantId,
+      );
+      return sendSuccess(
+        res,
+        200,
+        centers,
+        'Center combo list fetched successfully',
+      );
+    } catch (error) {
+      return sendError(res, 500, 'internal_server_error');
+    }
+  }
+  @Get(':id')
+  @RequirePermissions('read:tenant')
+  async findOne(
+    @Req() req: any,
+    @Res() res: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    try {
+      const tenant = await this.tenantsService.findOne(id);
+      return sendSuccess(res, 200, tenant, 'Tenant fetched successfully');
+    } catch (error: any) {
+      if (error.status === 404) {
+        return sendError(res, 404, 'tenant_not_found');
+      }
       return sendError(res, 500, 'internal_server_error');
     }
   }

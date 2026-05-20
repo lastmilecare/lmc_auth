@@ -3,7 +3,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import { Tenant } from '../../models/tenant.model';
 import { RoleB2C } from '../../models/role_b2c.model';
 import { PermissionB2C } from '../../models/permission_b2c.model';
@@ -128,9 +128,13 @@ export class TenantsService {
     });
 
     return {
-      total: count,
-      page: +page,
-      pageSize: +limit,
+      pagination: {
+        pagination: {
+          totalRecords: count,
+          currentPage: +page,
+          limit: +limit,
+        },
+      },
       data: rows,
     };
   }
@@ -250,7 +254,7 @@ export class TenantsService {
     if (exists) {
       throw new ConflictException('Center already exists with same name');
     }
-
+    dto.status = true;
     return await this.centerModel.create({
       ...dto,
     } as any);
@@ -263,60 +267,80 @@ export class TenantsService {
 
     const { name, status, startDate, endDate } = filters;
 
-    const where: any = {};
-
+    let whereSql = `WHERE 1=1`;
+    const replacements: any = {};
     if (user.role !== 'LMC_ADMIN') {
-      where.tenant_id = user.tenantId;
+      whereSql += ` AND c.tenant_id = :tenantId`;
+      replacements.tenantId = user.tenantId;
     }
 
     if (name?.trim()) {
-      where.agency_name = { [Op.iLike]: `%${name.trim()}%` };
+      whereSql += ` AND c.agency_name ILIKE :name`;
+      replacements.name = `%${name.trim()}%`;
     }
 
     if (status !== undefined && status !== null && status !== '') {
-      if (status === 'true' || status === true) where.status = true;
-      else if (status === 'false' || status === false) where.status = false;
-    }
-
-    // Date filtering
-    if (startDate || endDate) {
-      const parseDate = (val: string): Date | null => {
-        if (!val || typeof val !== 'string') return null;
-        const parsed = new Date(val);
-        return isNaN(parsed.getTime()) ? null : parsed;
-      };
-
-      const from = parseDate(startDate);
-      const to = parseDate(endDate);
-
-      if (from && to) {
-        const end = new Date(to);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt = { [Op.between]: [from, end] };
-      } else if (from) {
-        const end = new Date(from);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt  = { [Op.between]: [from, end] };
-      } else if (to) {
-        const start = new Date(to);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(to);
-        end.setHours(23, 59, 59, 999);
-        where.createdAt = { [Op.between]: [start, end] };
+      if (status === 'true' || status === true) {
+        whereSql += ` AND c.status = true`;
+      } else if (status === 'false' || status === false) {
+        whereSql += ` AND c.status = false`;
       }
     }
 
-    const { count, rows } = await this.centerModel.findAndCountAll({
-      where,
-      limit,
-      offset,
-      order: [['createdAt', 'DESC']],
+    if (startDate && endDate) {
+      const from = new Date(startDate);
+      const to = new Date(endDate);
+
+      to.setHours(23, 59, 59, 999);
+
+      whereSql += ` AND c."createdAt" BETWEEN :startDate AND :endDate`;
+
+      replacements.startDate = from;
+      replacements.endDate = to;
+    }
+
+    const dataQuery = `
+    SELECT 
+      c.*,
+      t.name AS tenant_name
+    FROM "Centers" c
+    LEFT JOIN tenants t ON t.id = c.tenant_id
+    ${whereSql}
+    ORDER BY c."createdAt" DESC
+    LIMIT :limit OFFSET :offset
+  `;
+
+    const countQuery = `
+    SELECT COUNT(*) as count
+    FROM "Centers" c
+    ${whereSql}
+  `;
+
+    const rows = await this.sequelize.query(dataQuery, {
+      replacements: {
+        ...replacements,
+        limit,
+        offset,
+      },
+      type: QueryTypes.SELECT,
     });
 
+    const countResult = await this.sequelize.query<{ count: string }>(
+      countQuery,
+      {
+        replacements,
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    const total = Number(countResult[0]?.count || 0);
+
     return {
-      total: count,
-      page: +page,
-      pageSize: +limit,
+      pagination: {
+        totalRecords: total,
+        currentPage: page,
+        limit,
+      },
       data: rows,
     };
   }
@@ -346,5 +370,24 @@ export class TenantsService {
     await center.destroy();
 
     return true;
+  }
+
+  async centerComboList(user: any, tenantId?: number) {
+    const where: any = {
+      status: true,
+    };
+    if (user.role !== 'LMC_ADMIN') {
+      where.tenant_id = user.tenantId;
+    } else if (tenantId) {
+      where.tenant_id = tenantId;
+    }
+
+    const centers = await this.centerModel.findAll({
+      where,
+      attributes: ['id', 'project_name', 'project_address'],
+      order: [['project_name', 'ASC']],
+    });
+
+    return centers;
   }
 }
