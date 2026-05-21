@@ -10,12 +10,14 @@ import { Op } from 'sequelize';
 import { UserN as User } from '../../models/UsersN';
 import { RoleB2C } from '../../models/role_b2c.model';
 import * as bcrypt from 'bcrypt';
+import { Center } from 'src/models/center.model';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectModel(User) private userModel: typeof User,
     @InjectModel(RoleB2C) private roleB2CModel: typeof RoleB2C,
+    @InjectModel(Center) private centerModel: typeof Center,
   ) {}
 
   // ── Create User ─────────────────────────────────────────────────────────
@@ -30,7 +32,9 @@ export class UsersService {
       username?: string;
       phone?: string;
       attributes?: Record<string, any>; // jsonb
-      employeeNo?: string; // employee_no
+      employeeNo?: string;
+      center_id?: number;
+      isAdmin?: boolean;
     },
   ) {
     const targetTenantId = requestingUser.tenantId ?? dto.tenantId;
@@ -61,6 +65,8 @@ export class UsersService {
       attributes: dto.attributes ?? {},
       status: true,
       employee_no: dto.employeeNo,
+      center_id: dto.center_id,
+      isAdmin: dto.isAdmin ?? false,
     } as any);
 
     return {
@@ -164,6 +170,11 @@ export class UsersService {
           attributes: ['id', 'name'],
           foreignKey: 'b2c_role_id',
         },
+        {
+          model: Center,
+          attributes: ['id', 'project_name', 'project_address'],
+          as: 'center',
+        },
       ],
       order: [['createdAt', 'DESC']],
       limit,
@@ -198,6 +209,7 @@ export class UsersService {
       phone?: string;
       attributes?: Record<string, any>;
       employeeNo?: string;
+      center_id?: number;
     },
   ) {
     const user = await this.userModel.findByPk(userId);
@@ -218,6 +230,7 @@ export class UsersService {
       status: dto.status,
       attributes: dto.attributes,
       employee_no: dto.employeeNo,
+      centerId: dto.center_id,
     });
 
     return {
@@ -226,6 +239,7 @@ export class UsersService {
       email: user.email,
       status: user.status,
       b2c_role_id: user.b2cRoleId,
+      center_id: user.centerId,
     };
   }
 

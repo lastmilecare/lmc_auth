@@ -9,7 +9,7 @@ import { Permission } from '../../models/Permissions';
 import { RolePermission } from '../../models/role-permission';
 import { JwtModule } from '@nestjs/jwt';
 import { RoleB2C } from 'src/models/role_b2c.model';
-
+import { Center } from 'src/models/center.model';
 @Module({
   imports: [
     SequelizeModule.forFeature([
@@ -19,6 +19,7 @@ import { RoleB2C } from 'src/models/role_b2c.model';
       Permission,
       RolePermission,
       RoleB2C,
+      Center,
     ]),
     JwtModule.registerAsync({
       useFactory: () => ({

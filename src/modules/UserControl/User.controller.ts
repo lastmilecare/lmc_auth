@@ -104,6 +104,8 @@ export class UsersController {
       username?: string;
       phone?: string;
       attributes?: Record<string, any>;
+      center_id?: number;
+      employeeNo?: string;
     },
   ) {
     try {

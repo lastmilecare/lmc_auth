@@ -14,6 +14,7 @@ import { Cetuser } from './CetUser';
 import { CETMANAGEMENT } from './CetManagement';
 import { Tenant } from './tenant.model';
 import { RoleB2C } from './role_b2c.model';
+import { Center } from './center.model';
 @Table({ tableName: 'Users' })
 export class UserN extends Model {
   @Column
@@ -95,4 +96,11 @@ export class UserN extends Model {
 
   @Column
   declare employee_no: string;
+
+  @ForeignKey(() => Center)
+  @Column({ field: 'center_id' })
+  declare centerId: number | null;
+
+  @BelongsTo(() => Center, { as: 'center' })
+  declare center: Center;
 }

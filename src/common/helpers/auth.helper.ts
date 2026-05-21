@@ -30,6 +30,7 @@ type TokenResponse = {
   permissions?: any;
   tenantId?: any;
   tenantType?: any;
+  center_id?: any;
 };
 
 export const checkUserPass = async (
@@ -344,5 +345,6 @@ export const checkUserPassB2C = async (
     name: userdata.name || null,
     tenantId: userdata.tenantId || null,
     tenantType: userdata.tenantType || null,
+    center_id: userdata.centerId || null,
   };
 };

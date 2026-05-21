@@ -67,6 +67,7 @@ export class AuthService {
       isAdmin: user.isAdmin,
       permissionIds,
       tenantType,
+      centerId : user.centerId || null,
     };
   }
 }
