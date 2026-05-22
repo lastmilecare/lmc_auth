@@ -34,6 +34,9 @@ export class PermissionsController {
       if (!req.body.resource) {
         return sendError(res, 400, 'Resource is required');
       }
+      if (!req.body.description) {
+        return sendError(res, 400, 'Description is required');
+      }
 
       const permission = await this.permissionsService.createPermission({
         action: req.body.action.toLowerCase().trim(),
