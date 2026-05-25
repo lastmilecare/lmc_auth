@@ -10,7 +10,7 @@ import {
   JWT_CENTER as configJwttokenCenter,
 } from 'config/envConfig';
 import { CorporateUser } from 'src/models/corporate-user';
-import { Center } from 'src/models/center.model';
+import { Op } from 'sequelize';
 
 /**
  * ADMIN LOGIN
@@ -317,7 +317,7 @@ export const checkUserPassB2C = async (
         tenantId: userdata.tenantId,
         role: userdata.role,
         p: userdata.permissionIds,
-        centerId: userdata.centerId  || null,
+        centerId: userdata.centerId || null,
       },
     },
     configJwttoken,
@@ -368,69 +368,63 @@ interface ScopeUser {
   center_id?: number | null;
 }
 
-export function buildScopeWhere(user: ScopeUser) {
+const TENANT_SCOPED_ROLES = new Set([
+  'TENANT_ADMIN',
+  'EDITOR',
+  'VIEWER',
+  'SUPPORT',
+  'AUDITOR',
+]);
+
+function buildSafeOwnershipWhere(userId: number, model: any) {
+  const possibleFields = [
+    'user_id',
+    'created_by',
+    'added_by',
+    'AddedBy',
+    'createdBy',
+    'added_by_id',
+  ];
+
+  const validFields = possibleFields.filter(
+    (field) => model.rawAttributes?.[field],
+  );
+
+  if (!validFields.length) return {};
+
+  return {
+    [Op.or]: validFields.map((field) => ({
+      [field]: userId,
+    })),
+  };
+}
+
+export function buildScopeWhere(user: ScopeUser, model: any) {
   const where: any = {};
 
-  switch (user.role) {
-    case 'LMC_ADMIN':
-      return where;
+  // 🧠 SUPER ADMIN
+  if (user.role === 'LMC_ADMIN') return where;
 
-    /**
-     * 🏢 Tenant level access
-     * Can see everything inside tenant
-     */
-    case 'TENANT_ADMIN':
-      where.tenant_id = user.tenant_id;
-      return where;
-
-    /**
-     * 🏥 Center level access
-     * Restricted to one center inside tenant
-     */
-    case 'CENTER_ADMIN':
-      where.tenant_id = user.tenant_id;
-      where.center_id = user.center_id;
-      return where;
-
-    /**
-     * 👥 Staff level access
-     * Only their own center + optionally self data
-     */
-    case 'STAFF':
-      where.tenant_id = user.tenant_id;
-      where.center_id = user.center_id;
-      where.user_id = user.id;
-      return where;
-
-    /**
-     * ✏️ EDITOR = data level restriction only (no scope restriction)
-     */
-    case 'EDITOR':
-      where.tenant_id = user.tenant_id;
-      return where;
-
-    /**
-     * 👀 VIEWER = read-only but same scope as tenant
-     */
-    case 'VIEWER':
-      where.tenant_id = user.tenant_id;
-      return where;
-
-    /**
-     * 🧪 SUPPORT = tenant-wide support access
-     */
-    case 'SUPPORT':
-      where.tenant_id = user.tenant_id;
-      return where;
-
-    /**
-     * 🧭 AUDITOR = tenant-wide read-only access
-     */
-    case 'AUDITOR':
-      where.tenant_id = user.tenant_id;
-      return where;
-
-    default:
-      throw new Error('Invalid role');
+  // 🏢 TENANT SCOPED
+  if (TENANT_SCOPED_ROLES.has(user.role)) {
+    where.tenant_id = user.tenant_id;
+    return where;
   }
+
+  // 🏥 CENTER ADMIN
+  if (user.role === 'CENTER_ADMIN') {
+    where.tenant_id = user.tenant_id;
+    where.center_id = user.center_id;
+    return where;
+  }
+
+  // 👥 STAFF
+  if (user.role === 'STAFF') {
+    where.tenant_id = user.tenant_id;
+    where.center_id = user.center_id;
+    where[Op.or] = buildSafeOwnershipWhere(user.id, model);
+    return where;
+  }
+
+  throw new Error('Invalid role');
 }

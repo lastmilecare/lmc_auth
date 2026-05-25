@@ -112,12 +112,15 @@ export class UsersService {
     //   where.tenant_id = query.tenantId;
     // }
 
-    const scopeWhere = buildScopeWhere({
-      id: requestingUser.userId,
-      role: requestingUser.role,
-      tenant_id: requestingUser.tenantId,
-      center_id: requestingUser.centerId,
-    });
+    const scopeWhere = buildScopeWhere(
+      {
+        id: requestingUser.userId,
+        role: requestingUser.role,
+        tenant_id: requestingUser.tenantId,
+        center_id: requestingUser.centerId,
+      },
+      this.userModel,
+    );
 
     const where: any = {
       ...scopeWhere,
