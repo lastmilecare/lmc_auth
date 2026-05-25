@@ -11,6 +11,7 @@ import { UserN as User } from '../../models/UsersN';
 import { RoleB2C } from '../../models/role_b2c.model';
 import * as bcrypt from 'bcrypt';
 import { Center } from 'src/models/center.model';
+import { buildScopeWhere } from 'src/common/helpers/auth.helper';
 
 @Injectable()
 export class UsersService {
@@ -61,11 +62,11 @@ export class UsersService {
       phone: dto.phone,
       password: hashed,
       tenantId: targetTenantId,
-      b2c_role_id: dto.b2cRoleId,
+      b2c_role_id: Number(dto.b2cRoleId),
       attributes: dto.attributes ?? {},
       status: true,
       employee_no: dto.employeeNo,
-      center_id: dto.center_id,
+      centerId: Number(dto?.center_id) || 0,
       isAdmin: dto.isAdmin ?? false,
     } as any);
 
@@ -101,15 +102,26 @@ export class UsersService {
     const limit = Math.min(Number(query?.limit) || 10, 100);
     const offset = (page - 1) * limit;
 
-    const where: any = {};
-    where.tenant_id = { [Op.not]: null };
+    // OLD LOGIC: Only return users with tenant_id set (exclude super-admins)
+    // where.tenant_id = { [Op.not]: null };
 
-    // Tenant scoping
-    if (requestingUser.tenantId) {
-      where.tenant_id = requestingUser.tenantId;
-    } else if (query?.tenantId) {
-      where.tenant_id = query.tenantId;
-    }
+    // // Tenant scoping
+    // if (requestingUser.tenantId) {
+    //   where.tenant_id = requestingUser.tenantId;
+    // } else if (query?.tenantId) {
+    //   where.tenant_id = query.tenantId;
+    // }
+
+    const scopeWhere = buildScopeWhere({
+      id: requestingUser.userId,
+      role: requestingUser.role,
+      tenant_id: requestingUser.tenantId,
+      center_id: requestingUser.centerId,
+    });
+
+    const where: any = {
+      ...scopeWhere,
+    };
 
     // Filters
     if (query?.name) {

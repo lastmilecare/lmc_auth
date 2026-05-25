@@ -10,6 +10,7 @@ import {
   JWT_CENTER as configJwttokenCenter,
 } from 'config/envConfig';
 import { CorporateUser } from 'src/models/corporate-user';
+import { Center } from 'src/models/center.model';
 
 /**
  * ADMIN LOGIN
@@ -18,7 +19,7 @@ type TokenResponse = {
   token?: string;
   role?: any;
   username?: any;
-    center_name?: any;
+  center_name?: any;
   isAdmin?: any;
   permission?: any;
   user_id?: any;
@@ -316,6 +317,7 @@ export const checkUserPassB2C = async (
         tenantId: userdata.tenantId,
         role: userdata.role,
         p: userdata.permissionIds,
+        centerId: userdata.centerId  || null,
       },
     },
     configJwttoken,
@@ -348,3 +350,87 @@ export const checkUserPassB2C = async (
     center_id: userdata.centerId || null,
   };
 };
+
+type UserRole =
+  | 'LMC_ADMIN'
+  | 'TENANT_ADMIN'
+  | 'CENTER_ADMIN'
+  | 'STAFF'
+  | 'EDITOR'
+  | 'VIEWER'
+  | 'SUPPORT'
+  | 'AUDITOR';
+
+interface ScopeUser {
+  id: number;
+  role: UserRole;
+  tenant_id?: number | null;
+  center_id?: number | null;
+}
+
+export function buildScopeWhere(user: ScopeUser) {
+  const where: any = {};
+
+  switch (user.role) {
+    case 'LMC_ADMIN':
+      return where;
+
+    /**
+     * 🏢 Tenant level access
+     * Can see everything inside tenant
+     */
+    case 'TENANT_ADMIN':
+      where.tenant_id = user.tenant_id;
+      return where;
+
+    /**
+     * 🏥 Center level access
+     * Restricted to one center inside tenant
+     */
+    case 'CENTER_ADMIN':
+      where.tenant_id = user.tenant_id;
+      where.center_id = user.center_id;
+      return where;
+
+    /**
+     * 👥 Staff level access
+     * Only their own center + optionally self data
+     */
+    case 'STAFF':
+      where.tenant_id = user.tenant_id;
+      where.center_id = user.center_id;
+      where.user_id = user.id;
+      return where;
+
+    /**
+     * ✏️ EDITOR = data level restriction only (no scope restriction)
+     */
+    case 'EDITOR':
+      where.tenant_id = user.tenant_id;
+      return where;
+
+    /**
+     * 👀 VIEWER = read-only but same scope as tenant
+     */
+    case 'VIEWER':
+      where.tenant_id = user.tenant_id;
+      return where;
+
+    /**
+     * 🧪 SUPPORT = tenant-wide support access
+     */
+    case 'SUPPORT':
+      where.tenant_id = user.tenant_id;
+      return where;
+
+    /**
+     * 🧭 AUDITOR = tenant-wide read-only access
+     */
+    case 'AUDITOR':
+      where.tenant_id = user.tenant_id;
+      return where;
+
+    default:
+      throw new Error('Invalid role');
+  }
+}

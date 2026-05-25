@@ -31,6 +31,7 @@ export class JwtAuthGuard implements CanActivate {
         email:       decoded.data.email,
         tenantId:    decoded.data.tenantId,    // null = LMC Admin
         role:        decoded.data.role,
+        centerId:    decoded.data.centerId || null,
           permissions: (decoded.data.p || [])
     .map((id: number) => getPermissionsMap()[id])
     .filter(Boolean),  // ['create:user', 'read:role', ...]
