@@ -384,6 +384,7 @@ function buildSafeOwnershipWhere(userId: number, model: any) {
     'AddedBy',
     'createdBy',
     'added_by_id',
+    'addedby'
   ];
 
   const validFields = possibleFields.filter(
