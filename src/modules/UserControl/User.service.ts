@@ -238,14 +238,26 @@ export class UsersService {
     }
 
     await user.update({
-      name: dto.name,
+      // name: dto.name,
+      // username: dto.username,
+      // phone: dto.phone,
+      // b2c_role_id: dto.b2cRoleId,
+      // status: dto.status,
+      // attributes: dto.attributes,
+      // employee_no: dto.employeeNo,
+      // centerId: dto.center_id,
+        name: dto.name,
       username: dto.username,
+      
       phone: dto.phone,
-      b2c_role_id: dto.b2cRoleId,
-      status: dto.status,
-      attributes: dto.attributes,
+      
+      
+      b2c_role_id: Number(dto.b2cRoleId),
+      attributes: dto.attributes ?? {},
+      status: true,
       employee_no: dto.employeeNo,
-      centerId: dto.center_id,
+      centerId: Number(dto?.center_id) || 0,
+      
     });
 
     return {
