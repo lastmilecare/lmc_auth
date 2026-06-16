@@ -12,10 +12,11 @@ import { RoleB2C } from '../../models/role_b2c.model';
 import * as bcrypt from 'bcrypt';
 import { Center } from 'src/models/center.model';
 import { buildScopeWhere } from 'src/common/helpers/auth.helper';
-
+import { Sequelize } from 'sequelize-typescript';
 @Injectable()
 export class UsersService {
   constructor(
+    private readonly sequelize: Sequelize,
     @InjectModel(User) private userModel: typeof User,
     @InjectModel(RoleB2C) private roleB2CModel: typeof RoleB2C,
     @InjectModel(Center) private centerModel: typeof Center,
@@ -36,6 +37,8 @@ export class UsersService {
       employeeNo?: string;
       center_id?: number;
       isAdmin?: boolean;
+      registration_number?: string;
+      qualification?: string;
     },
   ) {
     const targetTenantId = requestingUser.tenantId ?? dto.tenantId;
@@ -46,7 +49,7 @@ export class UsersService {
     // Verify role exists
     const role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
     if (!role) throw new NotFoundException('Role not found');
-
+    
     // Check email uniqueness
     const exists = await this.userModel.findOne({
       where: { email: dto.email },
@@ -54,7 +57,9 @@ export class UsersService {
     if (exists) throw new ConflictException('Email already in use');
 
     const hashed = await bcrypt.hash(dto.password, 10);
+    const isDoctor =
 
+      role.name?.trim().toUpperCase() === 'DOCTOR';
     const user = await this.userModel.create({
       name: dto.name,
       username: dto.username,
@@ -68,7 +73,48 @@ export class UsersService {
       employee_no: dto.employeeNo,
       centerId: Number(dto?.center_id) || 0,
       isAdmin: dto.isAdmin ?? false,
+      role_id: isDoctor ? 4 : 0,
     } as any);
+
+    await this.sequelize.query(
+      `
+  INSERT INTO "Doctors"
+  (
+    user_id,
+    external_id,
+    registration_number,
+    qualification,
+    signature,
+    "createdAt",
+    "updatedAt",
+    contact_number
+  )
+  VALUES
+  (
+    :userId,
+    :externalId,
+    :registrationNumber,
+    :qualification,
+    :signature,
+    :createdAt,
+    :createdAt,
+    :contact_number
+  )
+  `,
+      {
+        replacements: {
+          userId: user.id,
+          externalId: `DR00${user.id}`,
+          registrationNumber: dto.registration_number,
+          qualification: dto.qualification,
+          signature: "N/A",
+          createdAt: new Date(),
+          contact_number: dto.phone
+        },
+      },
+    );
+
+
 
     return {
       id: user.id,
@@ -225,40 +271,113 @@ export class UsersService {
       attributes?: Record<string, any>;
       employeeNo?: string;
       center_id?: number;
+      qualification?: string;
+    registration_number?: string;
     },
   ) {
-    const user = await this.userModel.findByPk(userId);
-    if (!user) throw new NotFoundException('User not found');
+   const user = await this.userModel.findByPk(userId);
 
-    this.assertTenantAccess(requestingUser, user.tenantId);
+if (!user) {
+  throw new NotFoundException('User not found');
+}
 
-    if (dto.b2cRoleId) {
-      const role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
-      if (!role) throw new NotFoundException('Role not found');
-    }
+this.assertTenantAccess(requestingUser, user.tenantId);
 
-    await user.update({
-      // name: dto.name,
-      // username: dto.username,
-      // phone: dto.phone,
-      // b2c_role_id: dto.b2cRoleId,
-      // status: dto.status,
-      // attributes: dto.attributes,
-      // employee_no: dto.employeeNo,
-      // centerId: dto.center_id,
-        name: dto.name,
-      username: dto.username,
-      
-      phone: dto.phone,
-      
-      
-      b2c_role_id: Number(dto.b2cRoleId),
-      attributes: dto.attributes ?? {},
-      status: true,
-      employee_no: dto.employeeNo,
-      centerId: Number(dto?.center_id) || 0,
-      
-    });
+
+let role = null;
+
+if (dto.b2cRoleId) {
+  role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
+
+  if (!role) {
+    throw new NotFoundException('Role not found');
+  }
+}
+
+await user.update({
+  name: dto.name,
+  username: dto.username,
+  phone: dto.phone,
+  b2c_role_id: Number(dto.b2cRoleId),
+  attributes: dto.attributes ?? {},
+  employee_no: dto.employeeNo,
+  centerId: Number(dto?.center_id) || 0,
+});
+const isDoctor =
+  role?.name?.trim().toUpperCase() === 'DOCTOR';
+
+if (isDoctor) {
+  const [doctorRows]: any = await this.sequelize.query(
+    `
+    SELECT id
+    FROM "Doctors"
+    WHERE user_id = :userId
+    `,
+    {
+      replacements: {
+        userId: user.id,
+      },
+    },
+  );
+
+  if (doctorRows.length > 0) {
+    await this.sequelize.query(
+      `
+      UPDATE "Doctors"
+      SET
+        registration_number = :registrationNumber,
+        qualification = :qualification,
+        contact_number = :contactNumber,
+        "updatedAt" = NOW()
+      WHERE user_id = :userId
+      `,
+      {
+        replacements: {
+          userId: user.id,
+          registrationNumber: dto.registration_number,
+          qualification: dto.qualification,
+          contactNumber: dto.phone,
+        },
+      },
+    );
+  } else {
+    await this.sequelize.query(
+      `
+      INSERT INTO "Doctors"
+      (
+        user_id,
+        external_id,
+        registration_number,
+        qualification,
+        signature,
+        contact_number,
+        "createdAt",
+        "updatedAt"
+      )
+      VALUES
+      (
+        :userId,
+        :externalId,
+        :registrationNumber,
+        :qualification,
+        'N/A',
+        :contactNumber,
+        NOW(),
+        NOW()
+      )
+      `,
+      {
+        replacements: {
+          userId: user.id,
+          externalId: `DR00${user.id}`,
+          registrationNumber: dto.registration_number,
+          qualification: dto.qualification,
+          contactNumber: dto.phone,
+        },
+      },
+    );
+  }
+}
 
     return {
       id: user.id,
