@@ -73,7 +73,7 @@ export class UsersService {
       employee_no: dto.employeeNo,
       centerId: Number(dto?.center_id) || 0,
       isAdmin: dto.isAdmin ?? false,
-      role_id: isDoctor ? 4 : 0,
+      role_id: isDoctor ? 4 : null,
     } as any);
 
     await this.sequelize.query(
