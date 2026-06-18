@@ -60,7 +60,7 @@ export class TenantsController {
   }
 
   @Get()
-  @RequirePermissions('read:tenant')
+  @RequirePermissions('read:center')
   async findAll(@Res() res: any, @Query() query: any) {
     try {
       const tenants = await this.tenantsService.findAll(query);
@@ -71,7 +71,7 @@ export class TenantsController {
   }
 
   @Get('all')
-  @RequirePermissions('read:tenant')
+  @RequirePermissions('read:center')
   async getAllTenant(@Req() req: any, @Res() res: any) {
     try {
       const tenant = await this.tenantsService.getAllTenant();

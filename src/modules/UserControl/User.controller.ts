@@ -54,6 +54,7 @@ export class UsersController {
 
       return sendSuccess(res, 201, result, 'User created successfully');
     } catch (error: any) {
+     
       if (error.status === 409) {
         return sendError(res, 409, 'Email already in use');
       }
