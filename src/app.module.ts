@@ -23,7 +23,15 @@ import { CenterAuthModule } from './modules/CenterAuth/centerauth.module';
 import { CetAuthModule } from './modules/CetAuth/cetauth.module';
 import { CorporateUser } from './models/corporate-user';
 import { Corporate } from './models/corporate';
-
+import { PicasoidAuthModule } from './modules/PicasoidAuth/picasoid-auth.module';
+import { RolePermissionB2C } from './models/role_permission_b2c.model';
+import { RoleB2C } from './models/role_b2c.model';
+import { PermissionB2C } from './models/permission_b2c.model';
+import { Tenant } from './models/tenant.model';
+import { Reflector } from '@nestjs/core';
+import { TenantsModule } from './modules/tenants/tenants.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { B2CRolesModule } from './modules/b2cRoles/roles.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -34,14 +42,32 @@ import { Corporate } from './models/corporate';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      models: [UserN, Role, Permission, RolePermission, UserRole, CETMANAGEMENT, Cetuser,
-        Permissionmetadata, UserLog, Center, Centeruser, TestAccount, CorporateUser, Corporate],
+      models: [
+        UserN,
+        Role,
+        Permission,
+        RolePermission,
+        UserRole,
+        CETMANAGEMENT,
+        Cetuser,
+        Permissionmetadata,
+        UserLog,
+        Center,
+        Centeruser,
+        TestAccount,
+        CorporateUser,
+        Corporate,
+        RolePermissionB2C,
+        RoleB2C,
+        PermissionB2C,
+        Tenant,
+      ],
       autoLoadModels: true,
-      synchronize: false, // Use only in development; use migrations in prod
+      synchronize: false,
       dialectOptions: {
         ssl: {
           require: true,
-          rejectUnauthorized: false, // Use only in development
+          rejectUnauthorized: false,
         },
       },
     }),
@@ -49,14 +75,17 @@ import { Corporate } from './models/corporate';
     AuthModule,
     RolesModule,
     CenterAuthModule,
-    CetAuthModule
+    CetAuthModule,
+    PicasoidAuthModule,
+    TenantsModule,
+    PermissionsModule,
+    B2CRolesModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, Reflector],
 })
 export class AppModule {
   constructor(private sequelize: Sequelize) {
     // this.seedPermissions();
   }
-
 }

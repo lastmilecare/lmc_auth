@@ -1,62 +1,106 @@
-import { Column, Model, Table, HasMany, BelongsTo, BelongsToMany, DataType } from 'sequelize-typescript';
-import { Role } from './Roles'; 
-import { Permission } from './Permissions';  
-import { Cetuser } from './CetUser';  
-import { CETMANAGEMENT } from './CetManagement'; 
+import {
+  Column,
+  Model,
+  Table,
+  HasMany,
+  BelongsTo,
+  BelongsToMany,
+  DataType,
+  ForeignKey,
+} from 'sequelize-typescript';
+import { Role } from './Roles';
+import { Permission } from './Permissions';
+import { Cetuser } from './CetUser';
+import { CETMANAGEMENT } from './CetManagement';
+import { Tenant } from './tenant.model';
+import { RoleB2C } from './role_b2c.model';
+import { Center } from './center.model';
 @Table({ tableName: 'Users' })
-
 export class UserN extends Model {
   @Column
-  username: string;
+  declare username: string;
 
   @Column
-  name: string;
+  declare name: string;
 
   @Column
-  role_id: bigint;
+  declare role_id: bigint;
 
   @Column
-  permission_id: bigint;
+  declare permission_id: bigint;
 
   @Column
-  email: string;
+  declare email: string;
+  @Column
+  declare password: string;
 
   @Column
-  password: string;
+  declare phone: string;
 
   @Column
-  phone: string;
+  declare isAdmin: boolean;
 
   @Column
-  isAdmin: boolean;
+  declare status: boolean;
 
   @Column
-  status: boolean;
-
-  @Column
-  external_id: string;
+  declare external_id: string;
 
   @Column({
     type: DataType.JSONB,
     allowNull: true,
     defaultValue: {},
   })
-  attributes: Record<string, any>;
+  declare attributes: Record<string, any>;
 
   @BelongsTo(() => Role, { foreignKey: 'role_id', as: 'role' })
-  role: Role;
+  declare role: Role;
 
-  @BelongsTo(() => Permission, { foreignKey: 'permission_id', as: 'permission' })
-  permission: Permission;
+  @BelongsTo(() => Permission, {
+    foreignKey: 'permission_id',
+    as: 'permission',
+  })
+  declare permission: Permission;
 
   @HasMany(() => Cetuser, { foreignKey: 'user_id', as: 'Cetusers' })
-  Cetusers: Cetuser[];
+  declare Cetusers: Cetuser[];
 
   @BelongsToMany(() => CETMANAGEMENT, {
     through: () => Cetuser,
     foreignKey: 'user_id',
     otherKey: 'cet_id',
-    as: 'CETManagements'
+    as: 'CETManagements',
   })
-  CETManagements: CETMANAGEMENT[];
+  declare CETManagements: CETMANAGEMENT[];
+
+  @ForeignKey(() => Tenant)
+  @Column({ type: DataType.INTEGER, allowNull: true, field: 'tenant_id' })
+  declare tenantId: number | null;
+
+  @BelongsTo(() => Tenant, { as: 'tenant' })
+  declare tenant: Tenant;
+
+  // @ForeignKey(() => RoleB2C)
+  // @Column({ type: DataType.INTEGER, allowNull: true, field: 'b2c_role_id' })
+  // declare b2cRoleId: number | null;
+
+  // @BelongsTo(() => RoleB2C, { as: 'roleb2c' })
+  // declare roleb2c: RoleB2C;
+
+  @ForeignKey(() => RoleB2C)
+  @Column({ field: 'b2c_role_id' })
+  declare b2cRoleId: number | null;
+
+  @BelongsTo(() => RoleB2C, { as: 'roleb2c' })
+  declare roleb2c: RoleB2C;
+
+  @Column
+  declare employee_no: string;
+
+  @ForeignKey(() => Center)
+  @Column({ field: 'center_id' })
+  declare centerId: number | null;
+
+  @BelongsTo(() => Center, { as: 'center' })
+  declare center: Center;
 }

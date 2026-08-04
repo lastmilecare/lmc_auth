@@ -1,85 +1,192 @@
-import { Controller, Post,Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+// src/users/User.controller.ts
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Req,
+  Res,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { UsersService } from './User.service';
-import { PermissionsRequired } from '../../common/decorators/permissions.decorator';
-import { RbacGuard } from '../../common/guards/rbac.guard';
-import { UserN as User } from '../../models/UsersN';
-import type { Request as ExpressRequest } from 'express';
-import { VerifyTokenGuard } from '../../common/middlewares/verify-token.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-authb2c.guard';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { RequirePermissions } from '../../common/decorators/require-permissions.decorator';
+import { sendSuccess, sendError } from '../../../src/util/responseHandler';
+import { createUserLogs } from 'src/common/helpers/auth.helper';
 
-@Controller('user')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Controller('b2c/users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
-  @Post('create')
-  // @Permissions('manage_users')
-  create(
+  // ── Create User ─────────────────────────────────────────────────────────
+  @Post()
+  @RequirePermissions('create:staff_form')
+  async createUser(@Res() res: any, @Req() req: any, @Body() body: any) {
+    try {
+      if (!body.email) {
+        return sendError(res, 400, 'Email is required');
+      }
+      if (!body.password) {
+        return sendError(res, 400, 'Password is required');
+      }
+      if (!body.b2cRoleId) {
+        return sendError(res, 400, 'Role is required');
+      }
+      if (!req.user.tenantId && !body.tenantId) {
+        return sendError(res, 400, 'Tenant ID is required');
+      }
+
+      const result = await this.usersService.createUser(req.user, body);
+
+      await createUserLogs({
+        user_id: req.user.userId,
+        action_type: 'create_user',
+        action_description: `Created user: ${body.email}`,
+        user_ip: req.userIp,
+        action_time: new Date().toISOString(),
+      });
+
+      return sendSuccess(res, 201, result, 'User created successfully');
+    } catch (error: any) {
+     
+      if (error.status === 409) {
+        return sendError(res, 409, 'Email already in use');
+      }
+      if (error.status === 404) {
+        return sendError(res, 404, error.message);
+      }
+      if (error.status === 403) {
+        return sendError(res, 403, 'forbidden');
+      }
+      return sendError(res, 500, 'internal_server_error');
+    }
+  }
+
+  // ── Get Users ───────────────────────────────────────────────────────────
+  @Get()
+  @RequirePermissions('read:staff_list')
+  async getUsers(@Res() res: any, @Req() req: any, @Query() query: any) {
+    try {
+      const result = await this.usersService.getUsers(req.user, {
+        page: query.page,
+        limit: query.limit,
+        tenantId: query.tenantId,
+        name: query.name,
+        email: query.email,
+        phone: query.phone,
+        status: query.status,
+        startDate: query.startDate,
+        endDate: query.endDate,
+      });
+      return sendSuccess(res, 200, result, 'Users fetched successfully');
+    } catch (error: any) {
+      return sendError(res, 500, 'internal_server_error');
+    }
+  }
+
+  // ── Update User ─────────────────────────────────────────────────────────
+  @Patch(':id')
+  @RequirePermissions('update:staff_list')
+  async updateUser(
+    @Res() res: any,
+    @Req() req: any,
+    @Param('id') id: string,
     @Body()
     body: {
-      username: string;
-      email: string;
+      b2cRoleId?: number; // ← fixed from roleId
+      status?: boolean;
+      name?: string;
+      username?: string;
       phone?: string;
-      password: string;
-      roles?: number[];
+      attributes?: Record<string, any>;
+      center_id?: number;
+      employeeNo?: string;
     },
   ) {
-    return this.usersService.create(body);
+    try {
+      const result = await this.usersService.updateUser(req.user, id, body);
+
+      await createUserLogs({
+        user_id: req.user.userId,
+        action_type: 'update_user',
+        action_description: `Updated user: ${id}`,
+        user_ip: req.userIp,
+        action_time: new Date().toISOString(),
+      });
+
+      return sendSuccess(res, 200, result, 'User updated successfully');
+    } catch (error: any) {
+      if (error.status === 404) {
+        return sendError(res, 404, 'user_not_found');
+      }
+      if (error.status === 403) {
+        return sendError(res, 403, 'forbidden');
+      }
+      return sendError(res, 500, 'internal_server_error');
+    }
   }
 
-  @Post('list')
-  @PermissionsRequired(['manage_users'])
-  findAll() {
-    return this.usersService.findAll();
+  // ── Toggle Status ───────────────────────────────────────────────────────
+  @Patch(':id/toggle-status')
+  @RequirePermissions('update:staff_list')
+  async toggleStatus(
+    @Res() res: any,
+    @Req() req: any,
+    @Param('id') id: string,
+  ) {
+    try {
+      const result = await this.usersService.toggleStatus(req.user, id);
+
+      await createUserLogs({
+        user_id: req.user.userId,
+        action_type: 'toggle_user_status',
+        action_description: `Toggled status for user: ${id}`,
+        user_ip: req.userIp,
+        action_time: new Date().toISOString(),
+      });
+
+      return sendSuccess(res, 200, result, result.message);
+    } catch (error: any) {
+      if (error.status === 404) {
+        return sendError(res, 404, 'user_not_found');
+      }
+      if (error.status === 403) {
+        return sendError(res, 403, 'forbidden');
+      }
+      return sendError(res, 500, 'internal_server_error');
+    }
   }
 
+  // ── Delete User ──────────────────────────────────────────────────────
+  @Delete(':id')
+  @RequirePermissions('delete:staff_list')
+  async deleteUser(@Res() res: any, @Req() req: any, @Param('id') id: string) {
+    try {
+      const result = await this.usersService.deleteUser(req.user, id);
 
+      await createUserLogs({
+        user_id: req.user.userId,
+        action_type: 'delete_user',
+        action_description: `Deleted user: ${id}`,
+        user_ip: req.userIp,
+        action_time: new Date().toISOString(),
+      });
 
-  @Post('details/:id')
-  // @Permissions('manage_users')
-  findDetails(@Param('id') id: string) {
-    return this.usersService.findByIdDetails(+id);
+      return sendSuccess(res, 200, result, 'User deleted successfully');
+    } catch (error: any) {
+      if (error.status === 404) {
+        return sendError(res, 404, 'user_not_found');
+      }
+      if (error.status === 403) {
+        return sendError(res, 403, 'forbidden');
+      }
+      return sendError(res, 500, 'internal_server_error');
+    }
   }
-
-  @Post('update/:id')
-  // @Permissions('manage_users')
-  update(@Param('id') id: string, @Body() body: Partial<{ username: string; email: string; phone: string }>) {
-    return this.usersService.update(+id, body);
-  }
-
-  
-
-  @UseGuards(VerifyTokenGuard, RbacGuard)
-  @Get('viewRoles')
-  // @PermissionsRequired(['manage_users'])
-  viewUserRoles(@Request() req: ExpressRequest) {
-    return this.usersService.viewUserRoles(req.user.id);
-  }
-
-  @UseGuards(VerifyTokenGuard, RbacGuard)
-  @Get('viewPermissions')
-  // @PermissionsRequired(['manage_users'])
-  viewUserPermissions(@Request() req: ExpressRequest) {
-    return this.usersService.getUserPermissions(req.user.id);
-  }
-
-  @UseGuards(VerifyTokenGuard, RbacGuard)
-  @Post('roles/add')
-  // @PermissionsRequired(['manage_users'])
-  addUserRoles(@Request() req: ExpressRequest, @Body() body: { roles: number[] }) {
-    return this.usersService.addUserRoles(req.user.id, body.roles);
-  }
-
-  @UseGuards(VerifyTokenGuard, RbacGuard)
-  @Post('roles/remove')
-  // @PermissionsRequired(['manage_users'])
-  removeUserRoles(@Request() req: ExpressRequest, @Body() body: { roles: number[] }) {
-    return this.usersService.removeUserRoles(req.user.id, body.roles);
-  }
-
-  @UseGuards(VerifyTokenGuard, RbacGuard)
-  @Get('viewRolesAndPermissions')
-  // @PermissionsRequired(['manage_users'])
-  viewUserRolesAndPermissions(@Request() req: ExpressRequest) {
-    return this.usersService.getUserRolesWithPermissions(req.user.id);
-  }
-
 }

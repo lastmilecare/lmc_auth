@@ -6,232 +6,236 @@ import { UserLog as userlog } from 'src/models/user-log.model';
 import { Cetuser as Cetuser } from 'src/models/CetUser';
 
 import {
-    JWT_ADMIN as configJwttoken,
-    JWT_CENTER as configJwttokenCenter,
+  JWT_ADMIN as configJwttoken,
+  JWT_CENTER as configJwttokenCenter,
 } from 'config/envConfig';
 import { CorporateUser } from 'src/models/corporate-user';
+import { Op } from 'sequelize';
 
 /**
  * ADMIN LOGIN
  */
 type TokenResponse = {
-    token?: string;
-    role?: any;
-    username?: any;
-    center_name?: any;
-    isAdmin?: any;
-    permission?: any;
-    user_id?: any;
-    status?: any;
-    cet_id?: any;
-    isCet?: any;
+  token?: string;
+  role?: any;
+  username?: any;
+  center_name?: any;
+  isAdmin?: any;
+  permission?: any;
+  user_id?: any;
+  status?: any;
+  cet_id?: any;
+  isCet?: any;
+  email?: any;
+  name?: any;
+  permissions?: any;
+  tenantId?: any;
+  tenantType?: any;
+  center_id?: any;
 };
 
 export const checkUserPass = async (
-    password: string,
-    userdata: any,
-    res: any,
+  password: string,
+  userdata: any,
+  res: any,
 ): Promise<TokenResponse> => {
-    const passwordIsValid = await bcrypt.compare(password, userdata.password);
+  const passwordIsValid = await bcrypt.compare(password, userdata.password);
 
-    if (!passwordIsValid) {
-        return { status: 'invalid_password' };
-    }
+  if (!passwordIsValid) {
+    return { status: 'invalid_password' };
+  }
 
-    const token = jwt.sign({ data: { id: userdata.id } }, configJwttoken, {
-        expiresIn: '10d',
-    });
+  const token = jwt.sign({ data: { id: userdata.id } }, configJwttoken, {
+    expiresIn: '10d',
+  });
 
-    res.setHeader(
-        'Set-Cookie',
-        cookie.serialize('token', token, { maxAge: 10 * 24 * 60 * 60, httpOnly: true }),
-    );
+  res.setHeader(
+    'Set-Cookie',
+    cookie.serialize('token', token, {
+      maxAge: 10 * 24 * 60 * 60,
+      httpOnly: true,
+    }),
+  );
 
-    return {
-        token,
-        role: userdata.slug,
-        username: userdata.username,
-        isAdmin: userdata.isAdmin,
-        permission: userdata.permission || null,
-        user_id: userdata.id || null,
-        status: true
-    };
+  return {
+    token,
+    role: userdata.role || userdata.slug,
+    username: userdata.username,
+    isAdmin: userdata.isAdmin,
+    permission: userdata.permission || null,
+    permissions: userdata.permissions || null,
+    user_id: userdata.id || null,
+    status: true,
+    email: userdata.email || null,
+    name: userdata.name || null,
+  };
 };
-
 
 /**
  * CENTER LOGIN
  */
 export const checkUserPassCenter = async (
-    password: string,
-    userdata: any,
-    res: any,
+  password: string,
+  userdata: any,
+  res: any,
 ): Promise<TokenResponse> => {
-    try {
-        const passwordIsValid = await bcrypt.compare(
-            password,
-            userdata.password,
-        );
+  try {
+    const passwordIsValid = await bcrypt.compare(password, userdata.password);
 
-        if (!passwordIsValid) {
-            return { status: 'invalid_password' };
-        }
-
-        const token = jwt.sign(
-            { data: { id: userdata.id } },
-            configJwttokenCenter,
-            { expiresIn: '10d' },
-        );
-
-        const response = {
-            token,
-            role: userdata.slug,
-            username: userdata.username,
-            isAdmin: userdata.isAdmin,
-            permission: userdata.permission || null,
-            user_id: userdata.id,
-            status: true
-        };
-
-        res.setHeader(
-            'Set-Cookie',
-            cookie.serialize('center_token', token, {
-                maxAge: 10 * 24 * 60 * 60 * 1000,
-                httpOnly: true,
-            }),
-        );
-
-        return response;
-    } catch (error) {
-        throw error;
+    if (!passwordIsValid) {
+      return { status: 'invalid_password' };
     }
+
+    const token = jwt.sign(
+      { data: { id: userdata.id } },
+      configJwttokenCenter,
+      { expiresIn: '10d' },
+    );
+
+    const response = {
+      token,
+      role: userdata.slug,
+      username: userdata.username,
+      isAdmin: userdata.isAdmin,
+      permission: userdata.permission || null,
+      user_id: userdata.id,
+      status: true,
+    };
+
+    res.setHeader(
+      'Set-Cookie',
+      cookie.serialize('center_token', token, {
+        maxAge: 10 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      }),
+    );
+
+    return response;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
  * EMAIL EXIST CHECK
  */
 export const checkEmailExist = async (email: string) => {
-    try {
-        const exists = await User.findOne({ where: { email } });
-        return !!exists;
-    } catch (error) {
-        throw error;
-    }
+  try {
+    const exists = await User.findOne({ where: { email } });
+    return !!exists;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
  * USERNAME EXIST CHECK
  */
 export const checkUserNameExist = async (username: string) => {
-    try {
-        const exists = await User.findOne({ where: { username } });
-        return !!exists;
-    } catch (error) {
-        throw error;
-    }
+  try {
+    const exists = await User.findOne({ where: { username } });
+    return !!exists;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
  * PHONE EXIST CHECK
  */
 export const checkPhoneExist = async (phone: string) => {
-    try {
-        const exists = await User.findOne({ where: { phone } });
-        return !!exists;
-    } catch (error) {
-        throw error;
-    }
+  try {
+    const exists = await User.findOne({ where: { phone } });
+    return !!exists;
+  } catch (error) {
+    throw error;
+  }
 };
 
 /**
  * CET LOGIN
  */
 export const checkUserPassCet = async (
-    password: string,
-    userdata: any,
-    res: any,
-) : Promise<TokenResponse>=> {
-    try {
-        const passwordIsValid = await bcrypt.compare(
-            password,
-            userdata.password,
-        );
+  password: string,
+  userdata: any,
+  res: any,
+): Promise<TokenResponse> => {
+  try {
+    const passwordIsValid = await bcrypt.compare(password, userdata.password);
 
-        if (!passwordIsValid) {
-            return { status: 'invalid_password' };
-        }
-
-        const cetUser = await Cetuser.findOne({
-            where: { user_id: userdata.id },
-        });
-
-        const corUser = await CorporateUser.findOne({ where: { user_id: userdata.id } });
-        if (!cetUser && !corUser) {
-            return { status: 'no_cet_id_found' };
-        }
-        console.log(corUser)
-        const cet_id = cetUser?.cet_id || corUser?.dataValues?.corporate_id;
-        console.log("cet_id", cet_id);
-        const token = jwt.sign(
-            {
-                data: {
-                    id: userdata.id,
-                    cet_id: cet_id,
-                },
-            },
-            configJwttokenCenter,
-            { expiresIn: '1000d' },
-        );
-        console.log("data", userdata);
-        
-        const response = {
-            token,
-            role: userdata.slug,
-            username: userdata.username,
-            isAdmin: false,
-            permission: userdata.permissions || null,
-            cet_id: cetUser?.dataValues?.cet_id  || cetUser?.cet_id || null,
-            isCet: true,
-            status: true,
-            role_id: userdata.role_id || null,
-            user_id: userdata.id || null,
-            corporate_id: corUser?.dataValues?.corporate_id || null,
-        };
-        console.log("response", response);
-        res.setHeader(
-            'Set-Cookie',
-            cookie.serialize('cet_token', token, {
-                maxAge: 10 * 24 * 60 * 60 * 1000,
-                httpOnly: true,
-            }),
-        );
-
-        return response;
-    } catch (error) {
-        throw error;
+    if (!passwordIsValid) {
+      return { status: 'invalid_password' };
     }
+
+    const cetUser = await Cetuser.findOne({
+      where: { user_id: userdata.id },
+    });
+
+    const corUser = await CorporateUser.findOne({
+      where: { user_id: userdata.id },
+    });
+    if (!cetUser && !corUser) {
+      return { status: 'no_cet_id_found' };
+    }
+    const cet_id = cetUser?.cet_id || corUser?.dataValues?.corporate_id;
+
+    const token = jwt.sign(
+      {
+        data: {
+          id: userdata.id,
+          cet_id: cet_id,
+        },
+      },
+      configJwttokenCenter,
+      { expiresIn: '1000d' },
+    );
+
+    const response = {
+      token,
+      role: userdata.slug,
+      username: userdata.username,
+      isAdmin: false,
+      permission: userdata.permissions || null,
+      cet_id: cetUser?.dataValues?.cet_id || cetUser?.cet_id || null,
+      isCet: true,
+      status: true,
+      role_id: userdata.role_id || null,
+      user_id: userdata.id || null,
+      corporate_id: corUser?.dataValues?.corporate_id || null,
+    };
+    res.setHeader(
+      'Set-Cookie',
+      cookie.serialize('cet_token', token, {
+        maxAge: 10 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+      }),
+    );
+
+    return response;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const createUserLogs = async (data: {
-    user_id: any;
-    action_type: any;
-    action_description: any;
-    user_ip?: any;
-    action_time?: any;
+  user_id: any;
+  action_type: any;
+  action_description: any;
+  user_ip?: any;
+  action_time?: any;
 }) => {
-    try {
-        await userlog.create({
-            user_id: data.user_id,
-            action_type: data.action_type,
-            action_description: data.action_description,
-            user_ip: data.user_ip,
-            action_time: data.action_time || new Date(),
-        });
-    } catch (error) {
-        throw error;
-    }
+  try {
+    await userlog.create({
+      user_id: data.user_id,
+      action_type: data.action_type,
+      action_description: data.action_description,
+      user_ip: data.user_ip,
+      action_time: data.action_time || new Date(),
+    });
+  } catch (error) {
+    throw error;
+  }
 };
-
 
 // export const getCenterId = async (id: number) => {
 //   try {
@@ -294,3 +298,134 @@ export const createUserLogs = async (data: {
 //     throw new Error(`Failed to assign CET to user: ${error.message}`);
 //   }
 // };
+
+export const checkUserPassB2C = async (
+  password: string,
+  userdata: any,
+  res: any,
+): Promise<TokenResponse> => {
+  const passwordIsValid = await bcrypt.compare(password, userdata.password);
+
+  if (!passwordIsValid) {
+    return { status: 'invalid_password' };
+  }
+  const token = jwt.sign(
+    {
+      data: {
+        id: userdata.id,
+        email: userdata.email,
+        tenantId: userdata.tenantId,
+        role: userdata.role,
+        p: userdata.permissionIds,
+        centerId: userdata.centerId || null,
+      },
+    },
+    configJwttoken,
+    {
+      expiresIn: '10d',
+    },
+  );
+
+  res.setHeader(
+    'Set-Cookie',
+    cookie.serialize('token', token, {
+      maxAge: 10 * 24 * 60 * 60,
+      httpOnly: true,
+    }),
+  );
+
+  return {
+    token,
+    role: userdata.role,
+    username: userdata.username,
+    isAdmin: userdata.isAdmin,
+    permission: userdata.permission || null,
+    permissions: userdata.permissions || null,
+    user_id: userdata.id || null,
+    status: true,
+    email: userdata.email || null,
+    name: userdata.name || null,
+    tenantId: userdata.tenantId || null,
+    tenantType: userdata.tenantType || null,
+    center_id: userdata.centerId || null,
+  };
+};
+
+type UserRole =
+  | 'LMC_ADMIN'
+  | 'TENANT_ADMIN'
+  | 'CENTER_ADMIN'
+  | 'STAFF'
+  | 'EDITOR'
+  | 'VIEWER'
+  | 'SUPPORT'
+  | 'AUDITOR';
+
+interface ScopeUser {
+  id: number;
+  role: UserRole;
+  tenant_id?: number | null;
+  center_id?: number | null;
+}
+
+const TENANT_SCOPED_ROLES = new Set([
+  'TENANT_ADMIN',
+  'EDITOR',
+  'VIEWER',
+  'SUPPORT',
+  'AUDITOR',
+]);
+
+function buildSafeOwnershipWhere(userId: number, model: any) {
+  const possibleFields = [
+    'user_id',
+    'created_by',
+    'added_by',
+    'AddedBy',
+    'createdBy',
+    'added_by_id',
+    'addedby'
+  ];
+
+  const validFields = possibleFields.filter(
+    (field) => model.rawAttributes?.[field],
+  );
+
+  if (!validFields.length) return {};
+
+  return {
+    [Op.or]: validFields.map((field) => ({
+      [field]: userId,
+    })),
+  };
+}
+
+export function buildScopeWhere(user: ScopeUser, model: any) {
+  const where: any = {};
+
+  // 🧠 SUPER ADMIN
+  if (user.role === 'LMC_ADMIN') return where;
+
+  // 🏢 TENANT SCOPED
+  if (TENANT_SCOPED_ROLES.has(user.role)) {
+    where.tenant_id = user.tenant_id;
+    return where;
+  }
+
+  // 🏥 CENTER ADMIN
+  if (user.role === 'CENTER_ADMIN') {
+    where.tenant_id = user.tenant_id;
+    where.center_id = user.center_id;
+    return where;
+  }
+
+  // 👥 STAFF
+  if (user.role === 'STAFF') {
+    where.tenant_id = user.tenant_id;
+    where.center_id = user.center_id;
+    where[Op.or] = buildSafeOwnershipWhere(user.id, model);
+    return where;
+  }
+
+  throw new Error('Invalid role');
+}

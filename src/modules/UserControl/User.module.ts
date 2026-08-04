@@ -8,14 +8,26 @@ import { Role } from '../../models/Roles';
 import { Permission } from '../../models/Permissions';
 import { RolePermission } from '../../models/role-permission';
 import { JwtModule } from '@nestjs/jwt';
+import { RoleB2C } from 'src/models/role_b2c.model';
+import { Center } from 'src/models/center.model';
 @Module({
-  imports: [SequelizeModule.forFeature([User, UserRole, Role, Permission, RolePermission]),
-JwtModule.registerAsync({
+  imports: [
+    SequelizeModule.forFeature([
+      User,
+      UserRole,
+      Role,
+      Permission,
+      RolePermission,
+      RoleB2C,
+      Center,
+    ]),
+    JwtModule.registerAsync({
       useFactory: () => ({
         secret: process.env.JWT_SECRET,
         signOptions: { expiresIn: '24h' },
       }),
-    }),],
+    }),
+  ],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],

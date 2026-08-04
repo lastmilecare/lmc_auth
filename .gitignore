@@ -398,5 +398,6 @@ Temporary Items
 dist
 .webpack
 .serverless/**/*.zip
-package-lock.json
+package-lock.jsonpackage-lock.json
+yarn.lockpackage-lock.json
 yarn.lock
