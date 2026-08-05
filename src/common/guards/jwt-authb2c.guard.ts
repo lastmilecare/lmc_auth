@@ -23,7 +23,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_ADMIN) as any;
+      const decoded = jwt.verify(token, process.env.JWT_ADMIN ) as any;
 
       // Attach decoded payload to req.user — same shape across all controllers
       request.user = {
