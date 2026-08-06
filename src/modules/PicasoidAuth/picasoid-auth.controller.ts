@@ -33,6 +33,7 @@ export class AuthController {
       if (result.status === 'account_inactive') {
         return sendError(res, 401, 'account_inactive', 'Account Inactive!');
       }
+      
 
       // Role-based access — using role name instead of slug now
       // const allowedRoles = ['LMC_ADMIN', 'TENANT_ADMIN'];

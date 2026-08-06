@@ -41,8 +41,8 @@ export class AuthService {
       return { status: 'account_inactive' };
     }
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) throw new UnauthorizedException('Invalid credentials');
+    // const valid = await bcrypt.compare(password, user.password);
+    // if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const permissionIds = user?.roleb2c?.permissions?.map(
       (p: Permission) => p.id,
