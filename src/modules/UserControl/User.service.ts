@@ -49,7 +49,7 @@ export class UsersService {
     // Verify role exists
     const role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
     if (!role) throw new NotFoundException('Role not found');
-    
+
     // Check email uniqueness
     const exists = await this.userModel.findOne({
       where: { email: dto.email },
@@ -57,9 +57,7 @@ export class UsersService {
     if (exists) throw new ConflictException('Email already in use');
 
     const hashed = await bcrypt.hash(dto.password, 10);
-    const isDoctor =
-
-      role.name?.trim().toUpperCase() === 'DOCTOR';
+    const isDoctor = role.name?.trim().toUpperCase() === 'DOCTOR';
     const user = await this.userModel.create({
       name: dto.name,
       username: dto.username,
@@ -75,9 +73,9 @@ export class UsersService {
       isAdmin: dto.isAdmin ?? false,
       role_id: isDoctor ? 4 : null,
     } as any);
-
-    await this.sequelize.query(
-      `
+    if (isDoctor) {
+      await this.sequelize.query(
+        `
   INSERT INTO "Doctors"
   (
     user_id,
@@ -101,20 +99,19 @@ export class UsersService {
     :contact_number
   )
   `,
-      {
-        replacements: {
-          userId: user.id,
-          externalId: `DR00${user.id}`,
-          registrationNumber: dto.registration_number,
-          qualification: dto.qualification,
-          signature: "N/A",
-          createdAt: new Date(),
-          contact_number: dto.phone
+        {
+          replacements: {
+            userId: user.id,
+            externalId: `DR00${user.id}`,
+            registrationNumber: dto.registration_number,
+            qualification: dto.qualification,
+            signature: 'N/A',
+            createdAt: new Date(),
+            contact_number: dto.phone,
+          },
         },
-      },
-    );
-
-
+      );
+    }
 
     return {
       id: user.id,
@@ -272,57 +269,55 @@ export class UsersService {
       employeeNo?: string;
       center_id?: number;
       qualification?: string;
-    registration_number?: string;
+      registration_number?: string;
     },
   ) {
-   const user = await this.userModel.findByPk(userId);
+    const user = await this.userModel.findByPk(userId);
 
-if (!user) {
-  throw new NotFoundException('User not found');
-}
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-this.assertTenantAccess(requestingUser, user.tenantId);
+    this.assertTenantAccess(requestingUser, user.tenantId);
 
+    let role = null;
 
-let role = null;
+    if (dto.b2cRoleId) {
+      role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
 
-if (dto.b2cRoleId) {
-  role = await this.roleB2CModel.findByPk(dto.b2cRoleId);
+      if (!role) {
+        throw new NotFoundException('Role not found');
+      }
+    }
 
-  if (!role) {
-    throw new NotFoundException('Role not found');
-  }
-}
+    await user.update({
+      name: dto.name,
+      username: dto.username,
+      phone: dto.phone,
+      b2c_role_id: Number(dto.b2cRoleId),
+      attributes: dto.attributes ?? {},
+      employee_no: dto.employeeNo,
+      centerId: Number(dto?.center_id) || 0,
+    });
+    const isDoctor = role?.name?.trim().toUpperCase() === 'DOCTOR';
 
-await user.update({
-  name: dto.name,
-  username: dto.username,
-  phone: dto.phone,
-  b2c_role_id: Number(dto.b2cRoleId),
-  attributes: dto.attributes ?? {},
-  employee_no: dto.employeeNo,
-  centerId: Number(dto?.center_id) || 0,
-});
-const isDoctor =
-  role?.name?.trim().toUpperCase() === 'DOCTOR';
-
-if (isDoctor) {
-  const [doctorRows]: any = await this.sequelize.query(
-    `
+    if (isDoctor) {
+      const [doctorRows]: any = await this.sequelize.query(
+        `
     SELECT id
     FROM "Doctors"
     WHERE user_id = :userId
     `,
-    {
-      replacements: {
-        userId: user.id,
-      },
-    },
-  );
+        {
+          replacements: {
+            userId: user.id,
+          },
+        },
+      );
 
-  if (doctorRows.length > 0) {
-    await this.sequelize.query(
-      `
+      if (doctorRows.length > 0) {
+        await this.sequelize.query(
+          `
       UPDATE "Doctors"
       SET
         registration_number = :registrationNumber,
@@ -331,18 +326,18 @@ if (isDoctor) {
         "updatedAt" = NOW()
       WHERE user_id = :userId
       `,
-      {
-        replacements: {
-          userId: user.id,
-          registrationNumber: dto.registration_number,
-          qualification: dto.qualification,
-          contactNumber: dto.phone,
-        },
-      },
-    );
-  } else {
-    await this.sequelize.query(
-      `
+          {
+            replacements: {
+              userId: user.id,
+              registrationNumber: dto.registration_number,
+              qualification: dto.qualification,
+              contactNumber: dto.phone,
+            },
+          },
+        );
+      } else {
+        await this.sequelize.query(
+          `
       INSERT INTO "Doctors"
       (
         user_id,
@@ -366,18 +361,18 @@ if (isDoctor) {
         NOW()
       )
       `,
-      {
-        replacements: {
-          userId: user.id,
-          externalId: `DR00${user.id}`,
-          registrationNumber: dto.registration_number,
-          qualification: dto.qualification,
-          contactNumber: dto.phone,
-        },
-      },
-    );
-  }
-}
+          {
+            replacements: {
+              userId: user.id,
+              externalId: `DR00${user.id}`,
+              registrationNumber: dto.registration_number,
+              qualification: dto.qualification,
+              contactNumber: dto.phone,
+            },
+          },
+        );
+      }
+    }
 
     return {
       id: user.id,
